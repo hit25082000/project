@@ -1,0 +1,89 @@
+---
+description: Coding patterns, naming conventions, and component architecture standards
+globs:
+alwaysApply: true
+---
+
+# General Coding Patterns
+
+This file contains general coding patterns and architectural guidelines that apply across all layers of the application.
+
+## Code Organization Principles
+
+### Separation of Concerns
+- **Presentation Layer**: Components handle UI and user interactions
+- **State Layer**: Services manage application state and business logic  
+- **Data Layer**: APIs handle backend communication
+
+### Dependency Flow
+```
+Components → Services → APIs → Supabase
+```
+
+### Signal-Based Architecture
+- Use Angular Signals for all state management
+- Avoid manual subscription management
+- Leverage `computed()` for derived state
+- Use `resource()` for async data loading
+
+## Common Patterns
+
+### Error Handling
+```typescript
+// Consistent error handling across all layers
+try {
+  const result = await this.api.getData();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  throw new ApiError('Failed to fetch data', error);
+}
+```
+
+### Loading States
+```typescript
+// Standard loading pattern with signals
+readonly isLoading = signal(false);
+
+async performAction(): Promise<void> {
+  this.isLoading.set(true);
+  try {
+    await this.api.performAction();
+  } finally {
+    this.isLoading.set(false);
+  }
+}
+```
+
+### Resource Management
+```typescript
+// Standard resource pattern for async data
+private readonly dataResource = resource({
+  request: () => this.trigger(),
+  loader: () => this.api.getData(),
+});
+
+readonly data = toSignal(this.dataResource.value);
+readonly loading = toSignal(this.dataResource.loading);
+readonly error = toSignal(this.dataResource.error);
+```
+
+## Code Quality Standards
+
+### TypeScript Usage
+- Use strict type checking
+- Prefer interfaces over types for object shapes
+- Use utility types (`Pick`, `Omit`, `Partial`) for type variations
+- Avoid `any` type usage
+
+### Performance Considerations
+- Use `OnPush` change detection strategy
+- Implement lazy loading for modules
+- Use `trackBy` functions in `@for` loops
+- Optimize bundle size with tree shaking
+
+### Security Best Practices
+- Validate all user inputs
+- Sanitize data before rendering
+- Use proper authentication guards
+- Implement proper authorization checks

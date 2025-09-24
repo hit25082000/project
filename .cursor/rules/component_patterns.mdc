@@ -1,0 +1,327 @@
+---
+description: Angular component patterns, smart vs dumb components, and component architecture
+globs:
+alwaysApply: false
+---
+
+# Component Patterns
+
+Angular components follow a strict separation between "smart" and "dumb" components to maintain clear responsibilities and improve testability.
+
+## Component Types
+
+### Page Components (`.page.ts`) - Smart Components
+
+These are **"smart"** components that handle business logic and state management.
+
+#### Rules:
+1. Inject **Services**, never APIs directly
+2. Connect service signals directly to the template for rendering
+3. Handle `(output)` events from child components and call service methods
+4. Manage routing and navigation logic
+5. Handle form submissions and user interactions
+
+#### Example:
+```typescript
+// establishment-details.page.ts
+@Component({
+  selector: 'app-establishment-details',
+  template: `
+    <div class="establishment-details">
+      @if (isLoading()) {
+        <v-loading-spinner />
+      } @else if (establishment()) {
+        <v-establishment-card 
+          [establishment]="establishment()!" 
+          (select)="onEstablishmentSelect($event)"
+        />
+        <v-establishment-actions 
+          [establishment]="establishment()!"
+          (edit)="onEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      } @else {
+        <v-error-message message="Establishment not found" />
+      }
+    </div>
+  `
+})
+export class EstablishmentDetailsPage {
+  private establishmentService = inject(EstablishmentService);
+  private router = inject(Router);
+  
+  // Connect service signals directly
+  establishment = this.establishmentService.selectedItem;
+  isLoading = this.establishmentService.isLoading;
+  
+  // Handle child component events
+  onEstablishmentSelect(id: string): void {
+    this.establishmentService.selectById(id);
+  }
+  
+  onEdit(establishment: iEstablishment): void {
+    this.router.navigate(['/establishments', establishment.id, 'edit']);
+  }
+  
+  onDelete(establishment: iEstablishment): void {
+    this.establishmentService.deleteById(establishment.id);
+  }
+}
+```
+
+### Reusable Components (`.component.ts`) - Dumb Components
+
+These are **"dumb"** components that are purely presentational.
+
+#### Rules:
+1. **Do not inject Services or APIs**
+2. Receive all data via `input()`
+3. Communicate all user actions via `output()`
+4. Use `model()` for simple two-way data binding
+5. Keep components focused on a single responsibility
+6. Use `@if`, `@for`, `@switch` control flow
+
+#### Example:
+```typescript
+// establishment-card.component.ts
+@Component({ 
+  selector: 'v-establishment-card',
+  template: `
+    <div class="establishment-card" (click)="onSelect()">
+      <h3>{{ establishment().name }}</h3>
+      <p>{{ establishment().description }}</p>
+      <div class="actions">
+        <button (click)="onEdit($event)">Edit</button>
+        <button (click)="onDelete($event)">Delete</button>
+      </div>
+    </div>
+  `
+})
+export class EstablishmentCardComponent {
+  // All data comes from inputs
+  establishment = input.required<iEstablishmentPreview>();
+  
+  // All actions communicated via outputs
+  select = output<string>();
+  edit = output<string>();
+  delete = output<string>();
+  
+  onSelect(): void {
+    this.select.emit(this.establishment().id);
+  }
+  
+  onEdit(event: Event): void {
+    event.stopPropagation();
+    this.edit.emit(this.establishment().id);
+  }
+  
+  onDelete(event: Event): void {
+    event.stopPropagation();
+    this.delete.emit(this.establishment().id);
+  }
+}
+```
+
+## Component Naming Conventions
+
+### File Naming
+- Page components: `[feature]-[action].page.ts`
+  - `establishment-details.page.ts`
+  - `user-profile.page.ts`
+- Reusable components: `[feature]-[type].component.ts`
+  - `establishment-card.component.ts`
+  - `user-avatar.component.ts`
+  - `loading-spinner.component.ts`
+
+### Selector Naming
+- Page selectors: `app-[feature]-[action]`
+  - `<app-establishment-details>`
+- Reusable component selectors: `v-[feature]-[type]`
+  - `<v-establishment-card>`
+  - `<v-loading-spinner>`
+  - `<v-user-avatar>`
+
+## Component Structure Standards
+
+### Template Organization
+```typescript
+@Component({
+  template: `
+    <!-- Header Section -->
+    <header class="component-header">
+      <h1>{{ title() }}</h1>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="component-content">
+      @if (isLoading()) {
+        <v-loading-spinner />
+      } @else {
+        <!-- Content here -->
+      }
+    </main>
+    
+    <!-- Footer/Actions -->
+    <footer class="component-actions">
+      <!-- Action buttons -->
+    </footer>
+  `
+})
+```
+
+### Component Class Organization
+```typescript
+export class ComponentName {
+  // 1. Dependencies (inject)
+  private service = inject(SomeService);
+  
+  // 2. Inputs
+  data = input.required<DataType>();
+  
+  // 3. Outputs
+  action = output<DataType>();
+  
+  // 4. Computed signals
+  processedData = computed(() => this.processData(this.data()));
+  
+  // 5. Event handlers
+  onAction(data: DataType): void {
+    this.action.emit(data);
+  }
+  
+  // 6. Private methods
+  private processData(data: DataType): ProcessedDataType {
+    // Implementation
+  }
+}
+```
+
+## Dynamic Component Creation (Angular 20)
+
+### Enhanced ViewContainerRef.createComponent
+```typescript
+@Component({
+  template: `
+    <div class="dynamic-component-container">
+      <ng-container #dynamicContainer></ng-container>
+    </div>
+  `
+})
+export class DynamicComponentHost {
+  @ViewChild('dynamicContainer', { read: ViewContainerRef }) 
+  container!: ViewContainerRef;
+  
+  private componentRef!: ComponentRef<any>;
+  
+  async loadDynamicComponent(componentType: any, inputs?: any, directives?: any[]): Promise<void> {
+    // Clear existing component
+    this.container.clear();
+    
+    // Create component with enhanced options
+    this.componentRef = this.container.createComponent(componentType, {
+      inputs,
+      directives
+    });
+    
+    // Set inputs dynamically
+    if (inputs) {
+      Object.keys(inputs).forEach(key => {
+        this.componentRef.setInput(key, inputs[key]);
+      });
+    }
+  }
+  
+  updateComponentInputs(inputs: any): void {
+    if (this.componentRef) {
+      Object.keys(inputs).forEach(key => {
+        this.componentRef.setInput(key, inputs[key]);
+      });
+    }
+  }
+  
+  destroyDynamicComponent(): void {
+    if (this.componentRef) {
+      this.componentRef.destroy();
+    }
+  }
+}
+```
+
+### Dynamic Component Factory
+```typescript
+@Injectable({ providedIn: 'root' })
+export class DynamicComponentService {
+  private componentRegistry = new Map<string, Type<any>>();
+  
+  registerComponent(key: string, component: Type<any>): void {
+    this.componentRegistry.set(key, component);
+  }
+  
+  getComponent(key: string): Type<any> | undefined {
+    return this.componentRegistry.get(key);
+  }
+  
+  async loadComponentAsync(
+    container: ViewContainerRef,
+    componentKey: string,
+    inputs?: any
+  ): Promise<ComponentRef<any>> {
+    const componentType = this.getComponent(componentKey);
+    if (!componentType) {
+      throw new Error(`Component '${componentKey}' not found`);
+    }
+    
+    // Clear container
+    container.clear();
+    
+    // Create component with inputs
+    const componentRef = container.createComponent(componentType, { inputs });
+    
+    return componentRef;
+  }
+}
+```
+
+## Component Communication Patterns
+
+### Parent to Child (Input)
+```typescript
+// Parent
+<v-child-component [data]="parentData" />
+
+// Child
+data = input.required<DataType>();
+```
+
+### Child to Parent (Output)
+```typescript
+// Child
+action = output<DataType>();
+this.action.emit(data);
+
+// Parent
+<v-child-component (action)="handleAction($event)" />
+```
+
+### Two-way Binding (Model)
+```typescript
+// Child
+value = model<DataType>();
+
+// Parent
+<v-child-component [(value)]="parentValue" />
+```
+
+## Component Testing Patterns
+
+### Smart Component Tests
+- Test service interactions
+- Test routing behavior
+- Test state management
+- Mock child components
+
+### Dumb Component Tests
+- Test input/output behavior
+- Test rendering logic
+- Test user interactions
+- No service mocking needed

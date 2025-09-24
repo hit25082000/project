@@ -1,0 +1,359 @@
+---
+description: API layer patterns, Supabase integration, and data access standards
+globs:
+alwaysApply: false
+---
+
+# API Patterns
+
+The API layer is the **only** layer that communicates with the backend. It provides a clean interface for data access and handles all Supabase interactions.
+
+## API Layer Rules
+
+1. This is the **only** layer that communicates with the backend
+2. Inject the `SupabaseClient` directly
+3. Build all queries here, using Supabase's `select()` syntax for joins
+4. Methods must return a `Promise`
+5. Handle errors consistently and throw meaningful exceptions
+6. Use TypeScript interfaces for request/response types
+7. Implement proper error handling and logging
+
+## Basic API Pattern
+
+```typescript
+// establishment.api.ts
+@Injectable({ providedIn: 'root' })
+export class EstablishmentApi {
+  private supabase = inject(SupabaseClient);
+  
+  async getList(searchTerm?: string): Promise<iEstablishmentPreview[]> {
+    let query = this.supabase
+      .from('establishments')
+      .select('id, name, description, created_at')
+      .order('created_at', { ascending: false });
+    
+    if (searchTerm) {
+      query = query.ilike('name', `%${searchTerm}%`);
+    }
+    
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+  
+  async getDetailsById(id: string): Promise<iEstablishmentDetails | null> {
+    const { data, error } = await this.supabase
+      .from('establishments')
+      .select(`
+        *,
+        address:addresses (*),
+        reviews:reviews (
+          *,
+          user:users (name, avatar_url)
+        ),
+        owner:users (id, name, email)
+      `)
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+    return data;
+  }
+  
+  async create(establishment: iEstablishmentCreate): Promise<iEstablishment> {
+    const { data, error } = await this.supabase
+      .from('establishments')
+      .insert(establishment)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+  
+  async update(id: string, establishment: iEstablishmentUpdate): Promise<iEstablishment> {
+    const { data, error } = await this.supabase
+      .from('establishments')
+      .update(establishment)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+  
+  async delete(id: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('establishments')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+}
+```
+
+## Advanced API Patterns
+
+### Complex Queries with Joins
+```typescript
+async getEstablishmentsWithStats(): Promise<iEstablishmentWithStats[]> {
+  const { data, error } = await this.supabase
+    .from('establishments')
+    .select(`
+      *,
+      address:addresses (*),
+      reviews:reviews (rating),
+      reservations:reservations (id, status)
+    `)
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  
+  return data?.map(establishment => ({
+    ...establishment,
+    averageRating: this.calculateAverageRating(establishment.reviews),
+    totalReservations: establishment.reservations?.length || 0,
+    activeReservations: establishment.reservations?.filter(r => r.status === 'active').length || 0
+  })) || [];
+}
+
+private calculateAverageRating(reviews: { rating: number }[]): number {
+  if (!reviews?.length) return 0;
+  const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
+  return sum / reviews.length;
+}
+```
+
+### Pagination Support
+```typescript
+async getListPaginated(
+  page: number = 1, 
+  pageSize: number = 10,
+  searchTerm?: string
+): Promise<iPaginatedResponse<iEstablishmentPreview>> {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  
+  let query = this.supabase
+    .from('establishments')
+    .select('id, name, description, created_at', { count: 'exact' })
+    .range(from, to)
+    .order('created_at', { ascending: false });
+  
+  if (searchTerm) {
+    query = query.ilike('name', `%${searchTerm}%`);
+  }
+  
+  const { data, error, count } = await query;
+  if (error) throw error;
+  
+  return {
+    data: data || [],
+    pagination: {
+      page,
+      pageSize,
+      totalItems: count || 0,
+      totalPages: Math.ceil((count || 0) / pageSize)
+    }
+  };
+}
+```
+
+### File Upload Handling
+```typescript
+async uploadImage(file: File, establishmentId: string): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${establishmentId}-${Date.now()}.${fileExt}`;
+  const filePath = `establishments/${fileName}`;
+  
+  const { error: uploadError } = await this.supabase.storage
+    .from('establishment-images')
+    .upload(filePath, file);
+  
+  if (uploadError) throw uploadError;
+  
+  const { data } = this.supabase.storage
+    .from('establishment-images')
+    .getPublicUrl(filePath);
+  
+  return data.publicUrl;
+}
+
+async deleteImage(imageUrl: string): Promise<void> {
+  const path = imageUrl.split('/').slice(-2).join('/');
+  const { error } = await this.supabase.storage
+    .from('establishment-images')
+    .remove([path]);
+  
+  if (error) throw error;
+}
+```
+
+### Real-time Subscriptions
+```typescript
+async subscribeToEstablishments(
+  callback: (establishment: iEstablishment) => void
+): Promise<RealtimeChannel> {
+  return this.supabase
+    .channel('establishments')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'establishments'
+      },
+      (payload) => {
+        callback(payload.new as iEstablishment);
+      }
+    )
+    .subscribe();
+}
+
+async unsubscribeFromEstablishments(channel: RealtimeChannel): Promise<void> {
+  await this.supabase.removeChannel(channel);
+}
+```
+
+## Error Handling Patterns
+
+### Custom Error Types
+```typescript
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public code?: string,
+    public statusCode?: number,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export class NotFoundError extends ApiError {
+  constructor(resource: string, id: string) {
+    super(`${resource} with id ${id} not found`, 'NOT_FOUND', 404);
+  }
+}
+
+export class ValidationError extends ApiError {
+  constructor(message: string, details?: any) {
+    super(message, 'VALIDATION_ERROR', 400, details);
+  }
+}
+```
+
+### Error Handling in API Methods
+```typescript
+async getDetailsById(id: string): Promise<iEstablishmentDetails | null> {
+  try {
+    const { data, error } = await this.supabase
+      .from('establishments')
+      .select(`
+        *,
+        address:addresses (*),
+        reviews:reviews (*)
+      `)
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Not found
+      }
+      throw new ApiError(
+        `Failed to fetch establishment: ${error.message}`,
+        error.code,
+        error.status,
+        error.details
+      );
+    }
+    
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(`Unexpected error: ${error.message}`);
+  }
+}
+```
+
+## API Naming Conventions
+
+### File Naming
+- API files: `[feature].api.ts`
+  - `establishment.api.ts`
+  - `user.api.ts`
+  - `reservation.api.ts`
+
+### Class Naming
+- API classes: `[Feature]Api`
+  - `EstablishmentApi`
+  - `UserApi`
+  - `ReservationApi`
+
+### Method Naming
+- Get methods: `get[Resource]`, `get[Resource]ById`, `get[Resource]List`
+  - `getEstablishments()`, `getEstablishmentById()`, `getEstablishmentList()`
+- Action methods: `[action][Resource]`
+  - `createEstablishment()`, `updateEstablishment()`, `deleteEstablishment()`
+- Special methods: `[action][Resource][By][Field]`
+  - `getEstablishmentByName()`, `getUserByEmail()`
+
+## API Testing Patterns
+
+### Unit Tests
+```typescript
+describe('EstablishmentApi', () => {
+  let api: EstablishmentApi;
+  let mockSupabase: jasmine.SpyObj<SupabaseClient>;
+  
+  beforeEach(() => {
+    mockSupabase = jasmine.createSpyObj('SupabaseClient', ['from']);
+    TestBed.configureTestingModule({
+      providers: [
+        EstablishmentApi,
+        { provide: SupabaseClient, useValue: mockSupabase }
+      ]
+    });
+    api = TestBed.inject(EstablishmentApi);
+  });
+  
+  it('should fetch establishment list', async () => {
+    const mockData = [{ id: '1', name: 'Test Establishment' }];
+    const mockQuery = {
+      select: jasmine.createSpy().and.returnValue({
+        order: jasmine.createSpy().and.returnValue({
+          then: (callback: Function) => callback({ data: mockData, error: null })
+        })
+      })
+    };
+    mockSupabase.from.and.returnValue(mockQuery);
+    
+    const result = await api.getList();
+    
+    expect(result).toEqual(mockData);
+    expect(mockSupabase.from).toHaveBeenCalledWith('establishments');
+  });
+});
+```
+
+## API Documentation Standards
+
+### Method Documentation
+```typescript
+/**
+ * Retrieves a list of establishments with optional search filtering
+ * @param searchTerm - Optional search term to filter establishments by name
+ * @returns Promise resolving to an array of establishment previews
+ * @throws {ApiError} When the request fails
+ */
+async getList(searchTerm?: string): Promise<iEstablishmentPreview[]> {
+  // Implementation
+}
+```

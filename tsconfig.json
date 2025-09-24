@@ -1,0 +1,53 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": false,
+    "target": "es2022",
+    "module": "preserve",
+    "lib": [
+      "es2020",
+      "dom"
+    ],
+    "baseUrl": "./",
+    "paths": {
+      "@core/*": [
+        "src/app/core/*"
+      ],
+      "@shared/*": [
+        "src/app/shared/*"
+      ],
+      "@widget/*": [
+        "src/app/widget/*"
+      ],
+      "@domain/*": [
+        "src/app/domain/*"
+      ],
+      "@env/*": [
+        "src/environments/*"
+      ]
+    },
+    "isolatedModules": true
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "typeCheckHostBindings": true,
+    "strictTemplates": true
+  },
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "compileOnSave": false,
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
+}

@@ -1,0 +1,381 @@
+---
+description: Performance optimization patterns including Angular 20 zoneless change detection
+globs:
+alwaysApply: false
+---
+
+# Performance Optimization Patterns
+
+Angular 20 introduces zoneless change detection in developer preview, offering improved performance by eliminating Zone.js overhead.
+
+## Zoneless Change Detection (Angular 20)
+
+### Enabling Zoneless Mode
+```typescript
+// main.ts
+import { bootstrapApplication } from '@angular/platform-browser';
+import { provideExperimentalZonelessChangeDetection } from '@angular/core';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideExperimentalZonelessChangeDetection(),
+    // other providers
+  ]
+});
+```
+
+### Zoneless-Compatible Patterns
+```typescript
+@Component({
+  selector: 'app-optimized',
+  template: `
+    <div class="optimized-component">
+      <h2>{{ title() }}</h2>
+      <p>Count: {{ count() }}</p>
+      <button (click)="increment()">Increment</button>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class OptimizedComponent {
+  title = signal('Optimized Component');
+  count = signal(0);
+  
+  increment(): void {
+    // Signal updates automatically trigger change detection in zoneless mode
+    this.count.update(c => c + 1);
+  }
+}
+```
+
+## Change Detection Optimization
+
+### OnPush Strategy
+```typescript
+@Component({
+  selector: 'v-optimized-card',
+  template: `
+    <div class="card" [class.selected]="isSelected()">
+      <h3>{{ item().name }}</h3>
+      <p>{{ item().description }}</p>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class OptimizedCardComponent {
+  item = input.required<Item>();
+  isSelected = input(false);
+}
+```
+
+### TrackBy Functions
+```typescript
+@Component({
+  template: `
+    <div class="item-list">
+      @for (item of items(); track item.id) {
+        <v-item-card [item]="item" />
+      }
+    </div>
+  `
+})
+export class ItemListComponent {
+  items = signal<Item[]>([]);
+  
+  // Custom trackBy for complex scenarios
+  trackByItemId(index: number, item: Item): string {
+    return item.id;
+  }
+}
+```
+
+## Memory Management
+
+### Component Cleanup
+```typescript
+@Component({
+  selector: 'app-data-display'
+})
+export class DataDisplayComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
+  private dataService = inject(DataService);
+  
+  readonly data = signal<Data[]>([]);
+  
+  ngOnInit(): void {
+    // Use takeUntil for automatic cleanup
+    this.dataService.getData()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => this.data.set(data));
+  }
+  
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+```
+
+### Signal Cleanup Patterns
+```typescript
+@Injectable({ providedIn: 'root' })
+export class CleanupService {
+  private cleanupFunctions: (() => void)[] = [];
+  
+  setupEffect(): void {
+    effect((onCleanup) => {
+      const subscription = interval(1000).subscribe(() => {
+        this.performTask();
+      });
+      
+      // Automatic cleanup when effect is destroyed
+      onCleanup(() => {
+        subscription.unsubscribe();
+      });
+    });
+  }
+  
+  private performTask(): void {
+    // Task implementation
+  }
+}
+```
+
+## Lazy Loading Patterns
+
+### Route-Based Lazy Loading
+```typescript
+// app.routes.ts
+export const routes: Routes = [
+  {
+    path: 'establishments',
+    loadComponent: () => import('./domain/establishment/establishment-list.page').then(m => m.EstablishmentListPage)
+  },
+  {
+    path: 'users',
+    loadChildren: () => import('./domain/user/user.routes').then(m => m.userRoutes)
+  }
+];
+```
+
+### Component Lazy Loading
+```typescript
+@Component({
+  template: `
+    <div class="dashboard">
+      <h1>Dashboard</h1>
+      @if (showChart()) {
+        <v-chart-display />
+      }
+      @if (showTable()) {
+        <v-data-table />
+      }
+    </div>
+  `
+})
+export class DashboardComponent {
+  showChart = signal(false);
+  showTable = signal(false);
+  
+  // Lazy load components based on user actions
+  loadChart(): void {
+    this.showChart.set(true);
+  }
+  
+  loadTable(): void {
+    this.showTable.set(true);
+  }
+}
+```
+
+## Bundle Optimization
+
+### Tree Shaking Optimization
+```typescript
+// Use specific imports to enable tree shaking
+import { signal, computed } from '@angular/core';
+import { takeUntil } from 'rxjs/operators';
+
+// Instead of importing entire modules
+import { CommonModule } from '@angular/common'; // ❌
+import { NgIf, NgFor } from '@angular/common'; // ✅
+```
+
+### Dynamic Imports
+```typescript
+@Component({
+  template: `
+    <div class="feature-container">
+      @if (showFeature()) {
+        <ng-container #featureContainer></ng-container>
+      }
+    </div>
+  `
+})
+export class DynamicFeatureComponent {
+  @ViewChild('featureContainer', { read: ViewContainerRef }) 
+  container!: ViewContainerRef;
+  
+  showFeature = signal(false);
+  
+  async loadFeature(): Promise<void> {
+    if (this.showFeature()) return;
+    
+    // Dynamic import for code splitting
+    const { FeatureComponent } = await import('./feature.component');
+    
+    const componentRef = this.container.createComponent(FeatureComponent);
+    this.showFeature.set(true);
+  }
+}
+```
+
+## Virtual Scrolling
+
+### Large List Optimization
+```typescript
+@Component({
+  template: `
+    <cdk-virtual-scroll-viewport itemSize="50" class="viewport">
+      @for (item of items(); track item.id) {
+        <div class="item">{{ item.name }}</div>
+      }
+    </cdk-virtual-scroll-viewport>
+  `,
+  styles: [`
+    .viewport {
+      height: 400px;
+      width: 100%;
+    }
+    
+    .item {
+      height: 50px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+    }
+  `]
+})
+export class VirtualScrollComponent {
+  items = signal<Item[]>([]);
+  
+  constructor() {
+    // Generate large dataset
+    const largeDataset = Array.from({ length: 10000 }, (_, i) => ({
+      id: i,
+      name: `Item ${i}`
+    }));
+    this.items.set(largeDataset);
+  }
+}
+```
+
+## Image Optimization
+
+### Lazy Loading Images
+```typescript
+@Component({
+  template: `
+    <div class="image-gallery">
+      @for (image of images(); track image.id) {
+        <img 
+          [src]="image.thumbnailUrl"
+          [alt]="image.alt"
+          loading="lazy"
+          (load)="onImageLoad(image.id)"
+          (error)="onImageError(image.id)"
+        />
+      }
+    </div>
+  `
+})
+export class ImageGalleryComponent {
+  images = signal<Image[]>([]);
+  loadedImages = signal<Set<string>>(new Set());
+  
+  onImageLoad(imageId: string): void {
+    this.loadedImages.update(loaded => new Set([...loaded, imageId]));
+  }
+  
+  onImageError(imageId: string): void {
+    console.warn(`Failed to load image: ${imageId}`);
+  }
+}
+```
+
+## Performance Monitoring
+
+### Performance Metrics
+```typescript
+@Injectable({ providedIn: 'root' })
+export class PerformanceService {
+  private performanceObserver = new PerformanceObserver((list) => {
+    list.getEntries().forEach((entry) => {
+      if (entry.entryType === 'measure') {
+        console.log(`${entry.name}: ${entry.duration}ms`);
+      }
+    });
+  });
+  
+  constructor() {
+    this.performanceObserver.observe({ entryTypes: ['measure'] });
+  }
+  
+  startTiming(name: string): void {
+    performance.mark(`${name}-start`);
+  }
+  
+  endTiming(name: string): void {
+    performance.mark(`${name}-end`);
+    performance.measure(name, `${name}-start`, `${name}-end`);
+  }
+}
+```
+
+### Component Performance Tracking
+```typescript
+@Component({
+  selector: 'app-tracked-component'
+})
+export class TrackedComponent {
+  private performanceService = inject(PerformanceService);
+  
+  ngOnInit(): void {
+    this.performanceService.startTiming('component-init');
+  }
+  
+  ngAfterViewInit(): void {
+    this.performanceService.endTiming('component-init');
+  }
+}
+```
+
+## Best Practices
+
+### Performance Do's
+- Use OnPush change detection strategy
+- Implement proper trackBy functions for lists
+- Use lazy loading for routes and components
+- Optimize bundle size with tree shaking
+- Use signals for reactive state management
+- Implement virtual scrolling for large datasets
+- Use lazy loading for images
+- Monitor performance metrics
+
+### Performance Don'ts
+- Don't use Default change detection for large components
+- Don't create objects in template expressions
+- Don't use complex computations in templates
+- Don't load all data upfront
+- Don't ignore bundle size optimization
+- Don't forget to clean up subscriptions and effects
+- Don't use heavy libraries without optimization
+- Don't ignore Core Web Vitals metrics
+
+### Zoneless Mode Considerations
+- Ensure all async operations use signals
+- Use provideExperimentalZonelessChangeDetection()
+- Test thoroughly as it's in developer preview
+- Consider migration impact on existing code
+- Monitor performance improvements
+- Be aware of potential breaking changes

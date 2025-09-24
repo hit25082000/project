@@ -1,0 +1,17 @@
+---
+description: Import path aliases and module resolution patterns
+globs:
+alwaysApply: true
+---
+
+### Path Aliases & Imports
+
+To maintain clean and consistent import paths, use the following TypeScript path aliases.
+
+```typescript
+@core/* // app/core/*
+@shared/* // app/shared/*
+@widget/* // app/widget/*
+@domain/* // app/domain/*
+@env/* // environments/*
+```

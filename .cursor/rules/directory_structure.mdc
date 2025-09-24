@@ -1,0 +1,55 @@
+---
+description: Directory structure, module organization, and file placement guidelines
+globs:
+alwaysApply: false
+---
+
+# Módulo 2: Arquitetura de Diretórios e Imports
+
+Esta seção detalha como o projeto é estruturado fisicamente e como os módulos se comunicam.
+
+### Directory Architecture & Organization
+
+The project follows a modular architecture to ensure separation of concerns and scalability.
+
+  * **`/core` - Core System**: Contains essential, application-wide logic that is loaded once.
+    ```
+    core/
+    ├── guards/      # Authentication and authorization guards
+    ├── pages/       # System-level pages (e.g., 404 Not Found)
+    └── layout/      # Main application layouts (e.g., shells with navbars)
+    ```
+  * **`/shared` - Shared Resources**: Contains reusable code that is not tied to a specific business domain.
+    ```
+    shared/
+    ├── components/  # Shared, business-aware components
+    ├── constants/   # Global constants
+    └── services/    # Global services (e.g., notification service)
+    ```
+  * **`/widget` - UI Widgets**: Contains generic, "dumb" UI components that are purely presentational.
+    ```
+    widget/
+    ├── components/  # Reusable UI components (e.g., v-button, v-card)
+    ├── directives/  # Custom attribute or structural directives
+    └── pipes/       # Custom data transformation pipes
+    ```
+  * **`/domain` - Business Modules**: Each folder represents a specific business domain of the application.
+    ```
+    domain/
+    ├── auth/
+    └── establishment/
+    ```
+    Each domain module follows a standard internal structure:
+    ```
+    domain/[module-name]/
+    ├── [module].routes.ts # Routes specific to this domain
+    ├── apis/              # Data access layer for this domain
+    ├── components/        # Components specific to this domain
+    ├── constants/         # Constants specific to this domain
+    ├── pages/             # Page components for this domain
+    └── services/          # State management services for this domain
+    ```
+
+#### Organization Rule
+
+> Domain-specific files (`constants`, `dialogs`, etc.) **must** be placed inside their respective domain folder. If a resource needs to be used by more than one domain, it should be moved to the `/shared` folder. If it is a purely presentational UI component, it belongs in `/widget`.

@@ -1,0 +1,479 @@
+---
+description: Angular 20 project configuration with simplified angular.json and build optimization
+globs:
+alwaysApply: false
+---
+
+# Angular 20 Project Configuration
+
+Angular 20 simplifies the `angular.json` configuration, reducing the need for extensive configurations and improving build performance.
+
+## Simplified Angular.json Structure
+
+### Modern Angular.json Configuration
+```json
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "my-app": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss",
+          "standalone": true
+        },
+        "@schematics/angular:directive": {
+          "standalone": true
+        }
+      },
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/my-app",
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "src/favicon.ico",
+              "src/assets"
+            ],
+            "styles": [
+              "src/styles.scss"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "my-app:build:production"
+            },
+            "development": {
+              "buildTarget": "my-app:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "buildTarget": "my-app:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "tsconfig.spec.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "src/favicon.ico",
+              "src/assets"
+            ],
+            "styles": [
+              "src/styles.scss"
+            ],
+            "scripts": []
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+## Build Optimization Configuration
+
+### Production Build Settings
+```json
+{
+  "configurations": {
+    "production": {
+      "budgets": [
+        {
+          "type": "initial",
+          "maximumWarning": "500kb",
+          "maximumError": "1mb"
+        },
+        {
+          "type": "anyComponentStyle",
+          "maximumWarning": "2kb",
+          "maximumError": "4kb"
+        }
+      ],
+      "outputHashing": "all",
+      "optimization": true,
+      "sourceMap": false,
+      "namedChunks": false,
+      "extractLicenses": true,
+      "vendorChunk": false,
+      "buildOptimizer": true,
+      "aot": true
+    }
+  }
+}
+```
+
+### Development Build Settings
+```json
+{
+  "configurations": {
+    "development": {
+      "optimization": false,
+      "extractLicenses": false,
+      "sourceMap": true,
+      "namedChunks": true,
+      "vendorChunk": true,
+      "buildOptimizer": false,
+      "aot": false
+    }
+  }
+}
+```
+
+## TypeScript Configuration
+
+### tsconfig.json
+```json
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/out-tsc",
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "sourceMap": true,
+    "declaration": false,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "useDefineForClassFields": false,
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
+    "paths": {
+      "@core/*": ["src/app/core/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@widget/*": ["src/app/widget/*"],
+      "@domain/*": ["src/app/domain/*"]
+    }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  }
+}
+```
+
+### tsconfig.app.json
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/app",
+    "types": []
+  },
+  "files": [
+    "src/main.ts"
+  ],
+  "include": [
+    "src/**/*.d.ts"
+  ]
+}
+```
+
+## ESLint Configuration
+
+### .eslintrc.json
+```json
+{
+  "root": true,
+  "ignorePatterns": [
+    "projects/**/*"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "*.ts"
+      ],
+      "extends": [
+        "@angular-eslint/recommended",
+        "@angular-eslint/template/process-inline-templates"
+      ],
+      "rules": {
+        "@angular-eslint/directive-selector": [
+          "error",
+          {
+            "type": "attribute",
+            "prefix": "app",
+            "style": "camelCase"
+          }
+        ],
+        "@angular-eslint/component-selector": [
+          "error",
+          {
+            "type": "element",
+            "prefix": "app",
+            "style": "kebab-case"
+          }
+        ],
+        "@angular-eslint/no-empty-lifecycle-method": "error",
+        "@angular-eslint/use-lifecycle-interface": "error"
+      }
+    },
+    {
+      "files": [
+        "*.html"
+      ],
+      "extends": [
+        "@angular-eslint/template/recommended"
+      ],
+      "rules": {
+        "@angular-eslint/template/banana-in-box": "error",
+        "@angular-eslint/template/cyclomatic-complexity": "error",
+        "@angular-eslint/template/no-negated-async": "error"
+      }
+    }
+  ]
+}
+```
+
+## Environment Configuration
+
+### Environment Files
+```typescript
+// src/environments/environment.ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000/api',
+  supabaseUrl: 'http://localhost:54321',
+  supabaseAnonKey: 'your-anon-key',
+  version: '1.0.0'
+};
+
+// src/environments/environment.prod.ts
+export const environment = {
+  production: true,
+  apiUrl: 'https://api.yourapp.com',
+  supabaseUrl: 'https://your-project.supabase.co',
+  supabaseAnonKey: 'your-production-anon-key',
+  version: '1.0.0'
+};
+```
+
+### Environment Usage
+```typescript
+// src/app/config/app.config.ts
+import { environment } from '../environments/environment';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideClientHydration(),
+    provideSupabase({
+      url: environment.supabaseUrl,
+      anonKey: environment.supabaseAnonKey
+    }),
+    provideHttpClient(),
+    {
+      provide: 'API_URL',
+      useValue: environment.apiUrl
+    }
+  ]
+};
+```
+
+## Build Scripts
+
+### Package.json Scripts
+```json
+{
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "build:dev": "ng build --configuration development",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "test:watch": "ng test --watch",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
+    "lint": "ng lint",
+    "lint:fix": "ng lint --fix",
+    "e2e": "ng e2e",
+    "analyze": "ng build --stats-json && npx webpack-bundle-analyzer dist/stats.json"
+  }
+}
+```
+
+## Performance Monitoring
+
+### Bundle Analysis
+```json
+{
+  "scripts": {
+    "analyze": "ng build --stats-json && npx webpack-bundle-analyzer dist/stats.json",
+    "analyze:prod": "ng build --configuration production --stats-json && npx webpack-bundle-analyzer dist/stats.json"
+  }
+}
+```
+
+### Core Web Vitals Monitoring
+```typescript
+// src/app/performance/performance.service.ts
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PerformanceService {
+  measureCoreWebVitals(): void {
+    // Measure First Contentful Paint
+    new PerformanceObserver((list) => {
+      list.getEntries().forEach((entry) => {
+        if (entry.entryType === 'paint' && entry.name === 'first-contentful-paint') {
+          console.log('FCP:', entry.startTime);
+        }
+      });
+    }).observe({ entryTypes: ['paint'] });
+
+    // Measure Largest Contentful Paint
+    new PerformanceObserver((list) => {
+      const entries = list.getEntries();
+      const lastEntry = entries[entries.length - 1];
+      console.log('LCP:', lastEntry.startTime);
+    }).observe({ entryTypes: ['largest-contentful-paint'] });
+
+    // Measure Cumulative Layout Shift
+    let clsValue = 0;
+    new PerformanceObserver((list) => {
+      list.getEntries().forEach((entry: any) => {
+        if (!entry.hadRecentInput) {
+          clsValue += entry.value;
+        }
+      });
+      console.log('CLS:', clsValue);
+    }).observe({ entryTypes: ['layout-shift'] });
+  }
+}
+```
+
+## CI/CD Configuration
+
+### GitHub Actions
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Run tests
+      run: npm run test:ci
+    
+    - name: Build application
+      run: npm run build:prod
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/
+```
+
+## Best Practices
+
+### Configuration Do's
+- Use the simplified angular.json structure
+- Enable strict TypeScript checking
+- Configure proper path aliases
+- Set up ESLint with Angular rules
+- Use environment-specific configurations
+- Implement bundle analysis
+- Monitor Core Web Vitals
+
+### Configuration Don'ts
+- Don't over-configure angular.json
+- Don't disable strict mode without justification
+- Don't ignore linting rules
+- Don't hardcode environment values
+- Don't skip performance monitoring
+- Don't use deprecated configuration options

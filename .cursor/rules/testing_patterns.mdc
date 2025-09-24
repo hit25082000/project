@@ -1,0 +1,382 @@
+---
+description: Testing patterns, unit tests, integration tests, and test organization
+globs:
+alwaysApply: false
+---
+
+# Testing Patterns
+
+Comprehensive testing strategies for Angular components, services, and APIs following best practices.
+
+## Test File Naming
+
+### Pattern
+`[feature].[type].spec.ts`
+
+### Examples
+- `establishment.service.spec.ts`
+- `establishment-card.component.spec.ts`
+- `establishment.api.spec.ts`
+- `user-profile.page.spec.ts`
+
+## Component Testing
+
+### Smart Component Tests (Page Components)
+```typescript
+describe('EstablishmentDetailsPage', () => {
+  let component: EstablishmentDetailsPage;
+  let fixture: ComponentFixture<EstablishmentDetailsPage>;
+  let mockService: jasmine.SpyObj<EstablishmentService>;
+
+  beforeEach(async () => {
+    mockService = jasmine.createSpyObj('EstablishmentService', [
+      'selectById',
+      'getEstablishmentById'
+    ]);
+
+    await TestBed.configureTestingModule({
+      imports: [EstablishmentDetailsPage],
+      providers: [
+        { provide: EstablishmentService, useValue: mockService }
+      ]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EstablishmentDetailsPage);
+    component = fixture.componentInstance;
+  });
+
+  it('should load establishment details when ID is provided', async () => {
+    const mockEstablishment = { id: '1', name: 'Test Establishment' };
+    mockService.getEstablishmentById.and.returnValue(
+      signal(mockEstablishment)
+    );
+
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    expect(mockService.selectById).toHaveBeenCalledWith('1');
+    expect(component.establishment()).toEqual(mockEstablishment);
+  });
+
+  it('should handle establishment selection', () => {
+    component.onEstablishmentSelect('2');
+    expect(mockService.selectById).toHaveBeenCalledWith('2');
+  });
+});
+```
+
+### Dumb Component Tests (Reusable Components)
+```typescript
+describe('EstablishmentCardComponent', () => {
+  let component: EstablishmentCardComponent;
+  let fixture: ComponentFixture<EstablishmentCardComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [EstablishmentCardComponent]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EstablishmentCardComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('should display establishment information', () => {
+    const mockEstablishment = {
+      id: '1',
+      name: 'Test Restaurant',
+      description: 'A test restaurant'
+    };
+
+    component.establishment = input(mockEstablishment);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement;
+    expect(compiled.querySelector('h3').textContent).toContain('Test Restaurant');
+    expect(compiled.querySelector('p').textContent).toContain('A test restaurant');
+  });
+
+  it('should emit select event when card is clicked', () => {
+    spyOn(component.select, 'emit');
+    const mockEstablishment = { id: '1', name: 'Test' };
+    
+    component.establishment = input(mockEstablishment);
+    fixture.detectChanges();
+
+    fixture.nativeElement.click();
+    expect(component.select.emit).toHaveBeenCalledWith('1');
+  });
+});
+```
+
+## Service Testing
+
+### Service Unit Tests
+```typescript
+describe('EstablishmentService', () => {
+  let service: EstablishmentService;
+  let mockApi: jasmine.SpyObj<EstablishmentApi>;
+
+  beforeEach(() => {
+    mockApi = jasmine.createSpyObj('EstablishmentApi', [
+      'getList',
+      'getDetailsById',
+      'create',
+      'update',
+      'delete'
+    ]);
+
+    TestBed.configureTestingModule({
+      providers: [
+        EstablishmentService,
+        { provide: EstablishmentApi, useValue: mockApi }
+      ]
+    });
+
+    service = TestBed.inject(EstablishmentService);
+  });
+
+  it('should load establishments list', async () => {
+    const mockEstablishments = [
+      { id: '1', name: 'Restaurant 1' },
+      { id: '2', name: 'Restaurant 2' }
+    ];
+    mockApi.getList.and.returnValue(Promise.resolve(mockEstablishments));
+
+    service.loadEstablishments();
+    await fixture.whenStable();
+
+    expect(service.establishments()).toEqual(mockEstablishments);
+    expect(service.isLoading()).toBeFalse();
+  });
+
+  it('should handle creation with optimistic update', async () => {
+    const newEstablishment = { name: 'New Restaurant', category: 'restaurant' };
+    const createdEstablishment = { id: '3', ...newEstablishment };
+    
+    mockApi.create.and.returnValue(Promise.resolve(createdEstablishment));
+    mockApi.getList.and.returnValue(Promise.resolve([createdEstablishment]));
+
+    await service.create(newEstablishment);
+
+    expect(mockApi.create).toHaveBeenCalledWith(newEstablishment);
+    expect(mockApi.getList).toHaveBeenCalled();
+  });
+
+  it('should handle errors gracefully', async () => {
+    const error = new Error('API Error');
+    mockApi.getList.and.returnValue(Promise.reject(error));
+
+    service.loadEstablishments();
+    await fixture.whenStable();
+
+    expect(service.error()).toEqual(error);
+    expect(service.isLoading()).toBeFalse();
+  });
+});
+```
+
+## API Testing
+
+### API Unit Tests
+```typescript
+describe('EstablishmentApi', () => {
+  let api: EstablishmentApi;
+  let mockSupabase: jasmine.SpyObj<SupabaseClient>;
+
+  beforeEach(() => {
+    mockSupabase = jasmine.createSpyObj('SupabaseClient', ['from']);
+    
+    TestBed.configureTestingModule({
+      providers: [
+        EstablishmentApi,
+        { provide: SupabaseClient, useValue: mockSupabase }
+      ]
+    });
+
+    api = TestBed.inject(EstablishmentApi);
+  });
+
+  it('should fetch establishment list', async () => {
+    const mockData = [{ id: '1', name: 'Test Establishment' }];
+    const mockQuery = {
+      select: jasmine.createSpy().and.returnValue({
+        order: jasmine.createSpy().and.returnValue(Promise.resolve({
+          data: mockData,
+          error: null
+        }))
+      })
+    };
+    mockSupabase.from.and.returnValue(mockQuery);
+
+    const result = await api.getList();
+
+    expect(result).toEqual(mockData);
+    expect(mockSupabase.from).toHaveBeenCalledWith('establishments');
+  });
+
+  it('should handle API errors', async () => {
+    const error = { message: 'Database error', code: 'DB_ERROR' };
+    const mockQuery = {
+      select: jasmine.createSpy().and.returnValue({
+        order: jasmine.createSpy().and.returnValue(Promise.resolve({
+          data: null,
+          error
+        }))
+      })
+    };
+    mockSupabase.from.and.returnValue(mockQuery);
+
+    await expectAsync(api.getList()).toBeRejectedWith(error);
+  });
+});
+```
+
+## Form Testing
+
+### Form Component Tests
+```typescript
+describe('EstablishmentFormComponent', () => {
+  let component: EstablishmentFormComponent;
+  let fixture: ComponentFixture<EstablishmentFormComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [EstablishmentFormComponent, ReactiveFormsModule]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EstablishmentFormComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('should validate required fields', () => {
+    const form = component.form;
+    
+    // Test empty form
+    expect(form.valid).toBeFalse();
+    expect(form.get('name')?.errors?.['required']).toBeTruthy();
+    
+    // Test with valid data
+    form.patchValue({
+      name: 'Test Restaurant',
+      description: 'A test restaurant',
+      category: 'restaurant'
+    });
+    
+    expect(form.valid).toBeTrue();
+  });
+
+  it('should emit form data on valid submission', () => {
+    spyOn(component.formSubmit, 'emit');
+    
+    const formData = {
+      name: 'Test Restaurant',
+      description: 'A test restaurant',
+      category: 'restaurant'
+    };
+    
+    component.form.patchValue(formData);
+    component.onSubmit();
+    
+    expect(component.formSubmit.emit).toHaveBeenCalledWith(formData);
+  });
+});
+```
+
+## Integration Testing
+
+### Component Integration Tests
+```typescript
+describe('EstablishmentModule Integration', () => {
+  let fixture: ComponentFixture<EstablishmentDetailsPage>;
+  let component: EstablishmentDetailsPage;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [EstablishmentModule],
+      providers: [
+        { provide: EstablishmentApi, useClass: MockEstablishmentApi }
+      ]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EstablishmentDetailsPage);
+    component = fixture.componentInstance;
+  });
+
+  it('should load and display establishment data', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement;
+    expect(compiled.querySelector('.establishment-name')).toBeTruthy();
+    expect(compiled.querySelector('.establishment-description')).toBeTruthy();
+  });
+});
+```
+
+## Test Utilities
+
+### Custom Test Helpers
+```typescript
+// test-helpers.ts
+export class TestHelpers {
+  static createMockEstablishment(overrides: Partial<iEstablishment> = {}): iEstablishment {
+    return {
+      id: '1',
+      name: 'Test Establishment',
+      description: 'Test Description',
+      category: eEstablishmentCategory.RESTAURANT,
+      status: eEstablishmentStatus.ACTIVE,
+      ownerId: 'user1',
+      createdAt: '2023-01-01T00:00:00Z',
+      updatedAt: '2023-01-01T00:00:00Z',
+      reviews: [],
+      images: [],
+      metadata: {},
+      ...overrides
+    };
+  }
+
+  static async waitForAsync(fn: () => void): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 0));
+    fn();
+  }
+}
+```
+
+## Test Configuration
+
+### Angular Testing Setup
+```typescript
+// test-setup.ts
+import 'zone.js/testing';
+import { TestBed } from '@angular/core/testing';
+import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
+
+TestBed.initTestEnvironment(
+  BrowserDynamicTestingModule,
+  platformBrowserDynamicTesting()
+);
+```
+
+### Jest Configuration
+```json
+{
+  "preset": "jest-preset-angular",
+  "setupFilesAfterEnv": ["<rootDir>/src/test-setup.ts"],
+  "testMatch": ["**/*.spec.ts"],
+  "collectCoverageFrom": [
+    "src/**/*.ts",
+    "!src/**/*.spec.ts",
+    "!src/**/*.interface.ts",
+    "!src/**/*.enum.ts"
+  ],
+  "coverageThreshold": {
+    "global": {
+      "branches": 80,
+      "functions": 80,
+      "lines": 80,
+      "statements": 80
+    }
+  }
+}
+```
