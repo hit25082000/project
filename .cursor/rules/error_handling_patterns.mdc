@@ -1,0 +1,644 @@
+---
+description: Error handling patterns, custom error types, and error management standards
+globs:
+alwaysApply: false
+---
+
+# Error Handling Patterns
+
+This document defines comprehensive error handling patterns, custom error types, and error management standards for the application.
+
+## Error Handling Principles
+
+1. **Consistent Error Structure**: All errors should follow a consistent format
+2. **Meaningful Error Messages**: Provide clear, actionable error messages
+3. **Error Classification**: Categorize errors by type and severity
+4. **Proper Error Propagation**: Handle errors at the appropriate layer
+5. **User-Friendly Messages**: Convert technical errors to user-friendly messages
+6. **Error Logging**: Log errors for debugging and monitoring
+7. **Error Recovery**: Implement graceful error recovery where possible
+
+## Custom Error Types
+
+### Base Error Classes
+```typescript
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public code?: string,
+    public statusCode?: number,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export class NotFoundError extends ApiError {
+  constructor(resource: string, id: string) {
+    super(`${resource} with id ${id} not found`, 'NOT_FOUND', 404);
+  }
+}
+
+export class ValidationError extends ApiError {
+  constructor(message: string, details?: any) {
+    super(message, 'VALIDATION_ERROR', 400, details);
+  }
+}
+
+export class UnauthorizedError extends ApiError {
+  constructor(message: string = 'Unauthorized access') {
+    super(message, 'UNAUTHORIZED', 401);
+  }
+}
+
+export class ForbiddenError extends ApiError {
+  constructor(message: string = 'Access forbidden') {
+    super(message, 'FORBIDDEN', 403);
+  }
+}
+
+export class ConflictError extends ApiError {
+  constructor(message: string, details?: any) {
+    super(message, 'CONFLICT', 409, details);
+  }
+}
+
+export class ServerError extends ApiError {
+  constructor(message: string = 'Internal server error') {
+    super(message, 'SERVER_ERROR', 500);
+  }
+}
+
+export class NetworkError extends ApiError {
+  constructor(message: string = 'Network connection failed') {
+    super(message, 'NETWORK_ERROR', 0);
+  }
+}
+
+export class TimeoutError extends ApiError {
+  constructor(message: string = 'Request timeout') {
+    super(message, 'TIMEOUT_ERROR', 408);
+  }
+}
+```
+
+### File Upload Error Types
+```typescript
+export class FileUploadError extends ApiError {
+  constructor(message: string, public file?: File) {
+    super(message, 'FILE_UPLOAD_ERROR', 400);
+  }
+}
+
+export class FileValidationError extends FileUploadError {
+  constructor(message: string, file: File) {
+    super(`File validation failed: ${message}`, file);
+  }
+}
+
+export class FileSizeError extends FileValidationError {
+  constructor(file: File, maxSize: number) {
+    super(`File size ${file.size} exceeds maximum ${maxSize}`, file);
+  }
+}
+
+export class FileTypeError extends FileValidationError {
+  constructor(file: File, allowedTypes: string[]) {
+    super(`File type ${file.type} not in allowed types: ${allowedTypes.join(', ')}`, file);
+  }
+}
+```
+
+### Authentication Error Types
+```typescript
+export class AuthenticationError extends ApiError {
+  constructor(message: string = 'Authentication failed') {
+    super(message, 'AUTH_ERROR', 401);
+  }
+}
+
+export class TokenExpiredError extends AuthenticationError {
+  constructor() {
+    super('Authentication token has expired');
+  }
+}
+
+export class InvalidCredentialsError extends AuthenticationError {
+  constructor() {
+    super('Invalid email or password');
+  }
+}
+
+export class AccountLockedError extends AuthenticationError {
+  constructor() {
+    super('Account has been locked due to multiple failed attempts');
+  }
+}
+```
+
+## Error Handling in API Methods
+
+### Standard Error Handling Pattern
+```typescript
+async getDetailsById(id: string): Promise<iEstablishmentDetails | null> {
+  try {
+    const { data, error } = await this.supabase
+      .from('establishments')
+      .select(`
+        *,
+        address:addresses (*),
+        reviews:reviews (*)
+      `)
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Not found
+      }
+      throw new ApiError(
+        `Failed to fetch establishment: ${error.message}`,
+        error.code,
+        error.status,
+        error.details
+      );
+    }
+    
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(`Unexpected error: ${error.message}`);
+  }
+}
+```
+
+### Error Handling with Retry Logic
+```typescript
+async getDataWithRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Don't retry for certain error types
+      if (error instanceof ValidationError || 
+          error instanceof UnauthorizedError ||
+          error instanceof ForbiddenError) {
+        throw error;
+      }
+      
+      // Don't retry on last attempt
+      if (attempt === maxRetries) break;
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay * attempt));
+    }
+  }
+  
+  throw new NetworkError(`Operation failed after ${maxRetries} attempts: ${lastError.message}`);
+}
+```
+
+## Error Handling in Services
+
+### Service Error Handling Pattern
+```typescript
+@Injectable({ providedIn: 'root' })
+export class EstablishmentService {
+  private api = inject(EstablishmentApi);
+  private notification = inject(NotificationService);
+  private logger = inject(LoggerService);
+  
+  readonly establishments = signal<iEstablishment[]>([]);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  
+  async loadEstablishments(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    
+    try {
+      const data = await this.api.getList();
+      this.establishments.set(data);
+    } catch (error) {
+      const errorMessage = this.handleError(error);
+      this.error.set(errorMessage);
+      this.notification.error(errorMessage);
+      this.logger.error('Failed to load establishments', error);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+  
+  private handleError(error: unknown): string {
+    if (error instanceof ApiError) {
+      switch (error.code) {
+        case 'NOT_FOUND':
+          return 'The requested resource was not found';
+        case 'VALIDATION_ERROR':
+          return 'Please check your input and try again';
+        case 'UNAUTHORIZED':
+          return 'Please log in to continue';
+        case 'FORBIDDEN':
+          return 'You do not have permission to perform this action';
+        case 'NETWORK_ERROR':
+          return 'Please check your internet connection and try again';
+        default:
+          return error.message || 'An unexpected error occurred';
+      }
+    }
+    
+    return 'An unexpected error occurred. Please try again.';
+  }
+}
+```
+
+## Error Handling in Components
+
+### Component Error Handling Pattern
+```typescript
+@Component({
+  selector: 'app-establishment-list',
+  template: `
+    @if (loading()) {
+      <div class="loading">Loading establishments...</div>
+    } @else if (error()) {
+      <div class="error">
+        <p>{{ error() }}</p>
+        <button (click)="retry()">Try Again</button>
+      </div>
+    } @else {
+      <div class="establishments">
+        @for (establishment of establishments(); track establishment.id) {
+          <app-establishment-card [establishment]="establishment" />
+        }
+      </div>
+    }
+  `
+})
+export class EstablishmentListComponent {
+  private service = inject(EstablishmentService);
+  
+  readonly establishments = this.service.establishments;
+  readonly loading = this.service.loading;
+  readonly error = this.service.error;
+  
+  ngOnInit(): void {
+    this.loadEstablishments();
+  }
+  
+  private async loadEstablishments(): Promise<void> {
+    try {
+      await this.service.loadEstablishments();
+    } catch (error) {
+      // Error handling is done in the service
+      console.error('Component error:', error);
+    }
+  }
+  
+  retry(): void {
+    this.loadEstablishments();
+  }
+}
+```
+
+## Global Error Handling
+
+### Global Error Handler
+```typescript
+@Injectable({ providedIn: 'root' })
+export class GlobalErrorHandler implements ErrorHandler {
+  private notification = inject(NotificationService);
+  private logger = inject(LoggerService);
+  
+  handleError(error: any): void {
+    // Log the error
+    this.logger.error('Global error caught', error);
+    
+    // Handle different error types
+    if (error instanceof ApiError) {
+      this.handleApiError(error);
+    } else if (error instanceof Error) {
+      this.handleGenericError(error);
+    } else {
+      this.handleUnknownError(error);
+    }
+  }
+  
+  private handleApiError(error: ApiError): void {
+    // Don't show notification for certain error types
+    if (error instanceof UnauthorizedError) {
+      // Redirect to login instead of showing notification
+      this.redirectToLogin();
+      return;
+    }
+    
+    this.notification.error(this.getUserFriendlyMessage(error));
+  }
+  
+  private handleGenericError(error: Error): void {
+    this.notification.error('An unexpected error occurred. Please try again.');
+  }
+  
+  private handleUnknownError(error: any): void {
+    this.notification.error('An unknown error occurred. Please refresh the page.');
+  }
+  
+  private getUserFriendlyMessage(error: ApiError): string {
+    switch (error.code) {
+      case 'NOT_FOUND':
+        return 'The requested item was not found';
+      case 'VALIDATION_ERROR':
+        return 'Please check your input and try again';
+      case 'FORBIDDEN':
+        return 'You do not have permission to perform this action';
+      case 'NETWORK_ERROR':
+        return 'Please check your internet connection and try again';
+      case 'TIMEOUT_ERROR':
+        return 'The request took too long. Please try again';
+      default:
+        return error.message || 'An error occurred. Please try again.';
+    }
+  }
+  
+  private redirectToLogin(): void {
+    // Implementation depends on your routing setup
+    window.location.href = '/login';
+  }
+}
+```
+
+### HTTP Interceptor for Error Handling
+```typescript
+@Injectable()
+export class ErrorInterceptor implements HttpInterceptor {
+  private notification = inject(NotificationService);
+  
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    return next.handle(req).pipe(
+      catchError((error: HttpErrorResponse) => {
+        const apiError = this.convertToApiError(error);
+        this.notification.error(this.getUserFriendlyMessage(apiError));
+        return throwError(() => apiError);
+      })
+    );
+  }
+  
+  private convertToApiError(error: HttpErrorResponse): ApiError {
+    switch (error.status) {
+      case 400:
+        return new ValidationError(error.error?.message || 'Invalid request');
+      case 401:
+        return new UnauthorizedError(error.error?.message);
+      case 403:
+        return new ForbiddenError(error.error?.message);
+      case 404:
+        return new NotFoundError('Resource', error.url || '');
+      case 409:
+        return new ConflictError(error.error?.message || 'Conflict occurred');
+      case 408:
+        return new TimeoutError(error.error?.message);
+      case 500:
+        return new ServerError(error.error?.message);
+      default:
+        return new NetworkError(error.message);
+    }
+  }
+  
+  private getUserFriendlyMessage(error: ApiError): string {
+    // Same implementation as GlobalErrorHandler
+    switch (error.code) {
+      case 'NOT_FOUND':
+        return 'The requested item was not found';
+      case 'VALIDATION_ERROR':
+        return 'Please check your input and try again';
+      case 'FORBIDDEN':
+        return 'You do not have permission to perform this action';
+      case 'NETWORK_ERROR':
+        return 'Please check your internet connection and try again';
+      case 'TIMEOUT_ERROR':
+        return 'The request took too long. Please try again';
+      default:
+        return error.message || 'An error occurred. Please try again.';
+    }
+  }
+}
+```
+
+## Error Logging and Monitoring
+
+### Logger Service
+```typescript
+@Injectable({ providedIn: 'root' })
+export class LoggerService {
+  private logLevel: LogLevel = environment.production ? LogLevel.ERROR : LogLevel.DEBUG;
+  
+  debug(message: string, data?: any): void {
+    if (this.shouldLog(LogLevel.DEBUG)) {
+      console.debug(`[DEBUG] ${message}`, data);
+    }
+  }
+  
+  info(message: string, data?: any): void {
+    if (this.shouldLog(LogLevel.INFO)) {
+      console.info(`[INFO] ${message}`, data);
+    }
+  }
+  
+  warn(message: string, data?: any): void {
+    if (this.shouldLog(LogLevel.WARN)) {
+      console.warn(`[WARN] ${message}`, data);
+    }
+  }
+  
+  error(message: string, error?: any): void {
+    if (this.shouldLog(LogLevel.ERROR)) {
+      console.error(`[ERROR] ${message}`, error);
+      
+      // In production, send to error tracking service
+      if (environment.production) {
+        this.sendToErrorTracking(message, error);
+      }
+    }
+  }
+  
+  private shouldLog(level: LogLevel): boolean {
+    return level >= this.logLevel;
+  }
+  
+  private sendToErrorTracking(message: string, error: any): void {
+    // Implementation for error tracking service (e.g., Sentry, LogRocket)
+    // This is a placeholder - implement based on your error tracking service
+  }
+}
+
+enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3
+}
+```
+
+## Error Recovery Strategies
+
+### Retry with Exponential Backoff
+```typescript
+async retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt === maxRetries) break;
+      
+      const delay = baseDelay * Math.pow(2, attempt - 1);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
+```
+
+### Circuit Breaker Pattern
+```typescript
+@Injectable({ providedIn: 'root' })
+export class CircuitBreakerService {
+  private failures = new Map<string, number>();
+  private lastFailureTime = new Map<string, number>();
+  private readonly maxFailures = 5;
+  private readonly timeout = 60000; // 1 minute
+  
+  async execute<T>(key: string, operation: () => Promise<T>): Promise<T> {
+    if (this.isCircuitOpen(key)) {
+      throw new NetworkError('Service temporarily unavailable');
+    }
+    
+    try {
+      const result = await operation();
+      this.onSuccess(key);
+      return result;
+    } catch (error) {
+      this.onFailure(key);
+      throw error;
+    }
+  }
+  
+  private isCircuitOpen(key: string): boolean {
+    const failures = this.failures.get(key) || 0;
+    const lastFailure = this.lastFailureTime.get(key) || 0;
+    
+    if (failures >= this.maxFailures) {
+      const timeSinceLastFailure = Date.now() - lastFailure;
+      return timeSinceLastFailure < this.timeout;
+    }
+    
+    return false;
+  }
+  
+  private onSuccess(key: string): void {
+    this.failures.delete(key);
+    this.lastFailureTime.delete(key);
+  }
+  
+  private onFailure(key: string): void {
+    const currentFailures = this.failures.get(key) || 0;
+    this.failures.set(key, currentFailures + 1);
+    this.lastFailureTime.set(key, Date.now());
+  }
+}
+```
+
+## Error Testing Patterns
+
+### Error Handling Tests
+```typescript
+describe('EstablishmentApi Error Handling', () => {
+  let api: EstablishmentApi;
+  let mockSupabase: jasmine.SpyObj<SupabaseClient>;
+  
+  beforeEach(() => {
+    mockSupabase = jasmine.createSpyObj('SupabaseClient', ['from']);
+    TestBed.configureTestingModule({
+      providers: [
+        EstablishmentApi,
+        { provide: SupabaseClient, useValue: mockSupabase }
+      ]
+    });
+    api = TestBed.inject(EstablishmentApi);
+  });
+  
+  it('should throw NotFoundError when establishment not found', async () => {
+    const mockError = { code: 'PGRST116', message: 'Not found' };
+    const mockQuery = {
+      select: jasmine.createSpy().and.returnValue({
+        eq: jasmine.createSpy().and.returnValue({
+          single: jasmine.createSpy().and.returnValue(
+            Promise.resolve({ data: null, error: mockError })
+          )
+        })
+      })
+    };
+    mockSupabase.from.and.returnValue(mockQuery);
+    
+    const result = await api.getDetailsById('non-existent-id');
+    
+    expect(result).toBeNull();
+  });
+  
+  it('should throw ApiError for unexpected errors', async () => {
+    const mockError = { code: 'UNEXPECTED', message: 'Database error' };
+    const mockQuery = {
+      select: jasmine.createSpy().and.returnValue({
+        eq: jasmine.createSpy().and.returnValue({
+          single: jasmine.createSpy().and.returnValue(
+            Promise.resolve({ data: null, error: mockError })
+          )
+        })
+      })
+    };
+    mockSupabase.from.and.returnValue(mockQuery);
+    
+    await expectAsync(api.getDetailsById('test-id'))
+      .toBeRejectedWithError(ApiError, 'Failed to fetch establishment: Database error');
+  });
+});
+```
+
+## Error Handling Best Practices
+
+### Do's
+- ✅ Use specific error types for different scenarios
+- ✅ Provide meaningful error messages
+- ✅ Log errors for debugging
+- ✅ Handle errors at the appropriate layer
+- ✅ Implement retry logic for transient errors
+- ✅ Use circuit breakers for external services
+- ✅ Provide user-friendly error messages
+- ✅ Implement proper error boundaries
+
+### Don'ts
+- ❌ Don't expose sensitive information in error messages
+- ❌ Don't ignore errors silently
+- ❌ Don't use generic error types for everything
+- ❌ Don't handle errors at the wrong layer
+- ❌ Don't retry indefinitely
+- ❌ Don't show technical error messages to users
+- ❌ Don't forget to clean up resources on error
+- ❌ Don't use try-catch for control flow

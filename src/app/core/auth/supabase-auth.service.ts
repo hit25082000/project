@@ -13,8 +13,8 @@ export class SupabaseAuthService {
 
   constructor() {
     this._client = createClient(
-      environment.supabaseUrl,
-      environment.supabaseKey
+      environment.SUPABASE_URL,
+      environment.SUPABASE_KEY
     );
 
     this._initAuthListener();

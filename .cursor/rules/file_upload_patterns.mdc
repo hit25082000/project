@@ -1,0 +1,417 @@
+---
+description: File upload patterns, Supabase storage integration, and file handling standards
+globs:
+alwaysApply: false
+---
+
+# File Upload Patterns
+
+This document defines patterns for handling file uploads, storage management, and file operations using Supabase Storage.
+
+## File Upload Rules
+
+1. Use Supabase Storage for all file operations
+2. Implement proper file validation and security checks
+3. Generate unique file names to prevent conflicts
+4. Handle upload errors gracefully
+5. Provide public URLs for uploaded files
+6. Implement file deletion capabilities
+7. Use proper file type validation
+8. Implement file size limits
+
+## Basic File Upload Pattern
+
+```typescript
+// file-upload.api.ts
+@Injectable({ providedIn: 'root' })
+export class FileUploadApi {
+  private supabase = inject(SupabaseClient);
+  
+  async uploadImage(file: File, establishmentId: string): Promise<string> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${establishmentId}-${Date.now()}.${fileExt}`;
+    const filePath = `establishments/${fileName}`;
+    
+    const { error: uploadError } = await this.supabase.storage
+      .from('establishment-images')
+      .upload(filePath, file);
+    
+    if (uploadError) throw uploadError;
+    
+    const { data } = this.supabase.storage
+      .from('establishment-images')
+      .getPublicUrl(filePath);
+    
+    return data.publicUrl;
+  }
+
+  async deleteImage(imageUrl: string): Promise<void> {
+    const path = imageUrl.split('/').slice(-2).join('/');
+    const { error } = await this.supabase.storage
+      .from('establishment-images')
+      .remove([path]);
+    
+    if (error) throw error;
+  }
+}
+```
+
+## Advanced File Upload Patterns
+
+### File Validation
+```typescript
+private validateFile(file: File, allowedTypes: string[], maxSize: number): void {
+  // Check file type
+  if (!allowedTypes.includes(file.type)) {
+    throw new ValidationError(`File type ${file.type} is not allowed`);
+  }
+  
+  // Check file size
+  if (file.size > maxSize) {
+    throw new ValidationError(`File size ${file.size} exceeds maximum ${maxSize}`);
+  }
+}
+
+async uploadImage(file: File, establishmentId: string): Promise<string> {
+  // Validate file
+  this.validateFile(file, ['image/jpeg', 'image/png', 'image/webp'], 5 * 1024 * 1024); // 5MB
+  
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${establishmentId}-${Date.now()}.${fileExt}`;
+  const filePath = `establishments/${fileName}`;
+  
+  const { error: uploadError } = await this.supabase.storage
+    .from('establishment-images')
+    .upload(filePath, file);
+  
+  if (uploadError) throw uploadError;
+  
+  const { data } = this.supabase.storage
+    .from('establishment-images')
+    .getPublicUrl(filePath);
+  
+  return data.publicUrl;
+}
+```
+
+### Multiple File Upload
+```typescript
+async uploadMultipleImages(files: File[], establishmentId: string): Promise<string[]> {
+  const uploadPromises = files.map(file => this.uploadImage(file, establishmentId));
+  return Promise.all(uploadPromises);
+}
+
+async deleteMultipleImages(imageUrls: string[]): Promise<void> {
+  const deletePromises = imageUrls.map(url => this.deleteImage(url));
+  await Promise.all(deletePromises);
+}
+```
+
+### File Upload with Progress
+```typescript
+async uploadImageWithProgress(
+  file: File, 
+  establishmentId: string,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${establishmentId}-${Date.now()}.${fileExt}`;
+  const filePath = `establishments/${fileName}`;
+  
+  // Simulate progress for demonstration
+  if (onProgress) {
+    onProgress(0);
+    // In real implementation, you might use XMLHttpRequest for progress tracking
+    setTimeout(() => onProgress(50), 500);
+    setTimeout(() => onProgress(100), 1000);
+  }
+  
+  const { error: uploadError } = await this.supabase.storage
+    .from('establishment-images')
+    .upload(filePath, file);
+  
+  if (uploadError) throw uploadError;
+  
+  const { data } = this.supabase.storage
+    .from('establishment-images')
+    .getPublicUrl(filePath);
+  
+  return data.publicUrl;
+}
+```
+
+### File Replacement Pattern
+```typescript
+async replaceImage(
+  file: File, 
+  establishmentId: string, 
+  oldImageUrl?: string
+): Promise<string> {
+  // Delete old image if provided
+  if (oldImageUrl) {
+    try {
+      await this.deleteImage(oldImageUrl);
+    } catch (error) {
+      console.warn('Failed to delete old image:', error);
+      // Continue with upload even if deletion fails
+    }
+  }
+  
+  // Upload new image
+  return this.uploadImage(file, establishmentId);
+}
+```
+
+## File Storage Organization
+
+### Bucket Structure
+```
+storage/
+├── establishment-images/
+│   ├── establishments/
+│   │   ├── {establishmentId}-{timestamp}.jpg
+│   │   └── {establishmentId}-{timestamp}.png
+│   └── thumbnails/
+│       └── {establishmentId}-{timestamp}-thumb.jpg
+├── user-avatars/
+│   └── {userId}-{timestamp}.jpg
+└── documents/
+    └── {documentId}-{timestamp}.pdf
+```
+
+### File Naming Conventions
+- Use descriptive prefixes: `establishment-`, `user-`, `document-`
+- Include entity ID for easy identification
+- Add timestamp for uniqueness: `{entityId}-{timestamp}.{ext}`
+- Use lowercase with hyphens: `my-establishment-1234567890.jpg`
+
+## Error Handling for File Operations
+
+### File Upload Errors
+```typescript
+export class FileUploadError extends ApiError {
+  constructor(message: string, public file?: File) {
+    super(message, 'FILE_UPLOAD_ERROR', 400);
+  }
+}
+
+export class FileValidationError extends FileUploadError {
+  constructor(message: string, file: File) {
+    super(`File validation failed: ${message}`, file);
+  }
+}
+
+export class FileSizeError extends FileValidationError {
+  constructor(file: File, maxSize: number) {
+    super(`File size ${file.size} exceeds maximum ${maxSize}`, file);
+  }
+}
+
+export class FileTypeError extends FileValidationError {
+  constructor(file: File, allowedTypes: string[]) {
+    super(`File type ${file.type} not in allowed types: ${allowedTypes.join(', ')}`, file);
+  }
+}
+```
+
+### Error Handling in Upload Methods
+```typescript
+async uploadImage(file: File, establishmentId: string): Promise<string> {
+  try {
+    // Validate file
+    this.validateFile(file, ['image/jpeg', 'image/png', 'image/webp'], 5 * 1024 * 1024);
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${establishmentId}-${Date.now()}.${fileExt}`;
+    const filePath = `establishments/${fileName}`;
+    
+    const { error: uploadError } = await this.supabase.storage
+      .from('establishment-images')
+      .upload(filePath, file);
+    
+    if (uploadError) {
+      throw new FileUploadError(`Upload failed: ${uploadError.message}`, file);
+    }
+    
+    const { data } = this.supabase.storage
+      .from('establishment-images')
+      .getPublicUrl(filePath);
+    
+    return data.publicUrl;
+  } catch (error) {
+    if (error instanceof FileUploadError || error instanceof FileValidationError) {
+      throw error;
+    }
+    throw new FileUploadError(`Unexpected upload error: ${error.message}`, file);
+  }
+}
+```
+
+## File Upload Service Integration
+
+### Service Layer Pattern
+```typescript
+// file-upload.service.ts
+@Injectable({ providedIn: 'root' })
+export class FileUploadService {
+  private api = inject(FileUploadApi);
+  private notification = inject(NotificationService);
+  
+  readonly isUploading = signal(false);
+  readonly uploadProgress = signal(0);
+  
+  async uploadEstablishmentImage(file: File, establishmentId: string): Promise<string> {
+    this.isUploading.set(true);
+    this.uploadProgress.set(0);
+    
+    try {
+      const imageUrl = await this.api.uploadImageWithProgress(
+        file, 
+        establishmentId,
+        (progress) => this.uploadProgress.set(progress)
+      );
+      
+      this.notification.success('Image uploaded successfully');
+      return imageUrl;
+    } catch (error) {
+      this.notification.error('Failed to upload image');
+      throw error;
+    } finally {
+      this.isUploading.set(false);
+      this.uploadProgress.set(0);
+    }
+  }
+}
+```
+
+## File Upload Component Integration
+
+### Component Usage Pattern
+```typescript
+// establishment-form.component.ts
+export class EstablishmentFormComponent {
+  private fileUpload = inject(FileUploadService);
+  
+  readonly isUploading = this.fileUpload.isUploading;
+  readonly uploadProgress = this.fileUpload.uploadProgress;
+  
+  async onFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) return;
+    
+    try {
+      const imageUrl = await this.fileUpload.uploadEstablishmentImage(
+        file, 
+        this.establishmentId()
+      );
+      
+      this.form.patchValue({ imageUrl });
+    } catch (error) {
+      // Error handling is done in the service
+    }
+  }
+}
+```
+
+## File Upload Testing Patterns
+
+### Unit Tests
+```typescript
+describe('FileUploadApi', () => {
+  let api: FileUploadApi;
+  let mockSupabase: jasmine.SpyObj<SupabaseClient>;
+  
+  beforeEach(() => {
+    mockSupabase = jasmine.createSpyObj('SupabaseClient', ['storage']);
+    TestBed.configureTestingModule({
+      providers: [
+        FileUploadApi,
+        { provide: SupabaseClient, useValue: mockSupabase }
+      ]
+    });
+    api = TestBed.inject(FileUploadApi);
+  });
+  
+  it('should upload image successfully', async () => {
+    const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    const mockStorage = {
+      from: jasmine.createSpy().and.returnValue({
+        upload: jasmine.createSpy().and.returnValue(Promise.resolve({ error: null })),
+        getPublicUrl: jasmine.createSpy().and.returnValue({ 
+          data: { publicUrl: 'https://example.com/image.jpg' } 
+        })
+      })
+    };
+    mockSupabase.storage = mockStorage;
+    
+    const result = await api.uploadImage(mockFile, 'establishment-123');
+    
+    expect(result).toBe('https://example.com/image.jpg');
+    expect(mockStorage.from).toHaveBeenCalledWith('establishment-images');
+  });
+});
+```
+
+## File Upload Security Considerations
+
+### Security Best Practices
+1. **File Type Validation**: Always validate file types on both client and server
+2. **File Size Limits**: Implement reasonable file size limits
+3. **Virus Scanning**: Consider implementing virus scanning for uploaded files
+4. **Access Control**: Use proper RLS policies for storage buckets
+5. **File Naming**: Use predictable but non-guessable file names
+6. **Content Validation**: Validate file content, not just extension
+
+### Storage Bucket Policies
+```sql
+-- Example RLS policy for establishment images
+CREATE POLICY "Users can upload establishment images" ON storage.objects
+FOR INSERT WITH CHECK (
+  bucket_id = 'establishment-images' AND
+  auth.role() = 'authenticated' AND
+  (storage.foldername(name))[1] = 'establishments'
+);
+
+CREATE POLICY "Users can view establishment images" ON storage.objects
+FOR SELECT USING (
+  bucket_id = 'establishment-images'
+);
+```
+
+## File Upload Performance Optimization
+
+### Optimization Strategies
+1. **Image Compression**: Compress images before upload
+2. **Thumbnail Generation**: Generate thumbnails for better performance
+3. **Lazy Loading**: Implement lazy loading for image galleries
+4. **CDN Integration**: Use CDN for faster image delivery
+5. **Progressive Upload**: Implement chunked uploads for large files
+
+### Image Compression Example
+```typescript
+private compressImage(file: File, quality: number = 0.8): Promise<File> {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    const img = new Image();
+    
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      canvas.toBlob((blob) => {
+        const compressedFile = new File([blob!], file.name, {
+          type: 'image/jpeg',
+          lastModified: Date.now()
+        });
+        resolve(compressedFile);
+      }, 'image/jpeg', quality);
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+}
+```

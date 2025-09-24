@@ -1,5 +1,5 @@
 ---
-description: Angular 20 enhanced template syntax including exponentiation operator and new features
+description: template syntax including exponentiation operator and new features
 globs:
 alwaysApply: false
 ---

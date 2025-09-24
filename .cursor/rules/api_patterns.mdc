@@ -99,36 +99,6 @@ export class EstablishmentApi {
 
 ## Advanced API Patterns
 
-### Complex Queries with Joins
-```typescript
-async getEstablishmentsWithStats(): Promise<iEstablishmentWithStats[]> {
-  const { data, error } = await this.supabase
-    .from('establishments')
-    .select(`
-      *,
-      address:addresses (*),
-      reviews:reviews (rating),
-      reservations:reservations (id, status)
-    `)
-    .order('created_at', { ascending: false });
-  
-  if (error) throw error;
-  
-  return data?.map(establishment => ({
-    ...establishment,
-    averageRating: this.calculateAverageRating(establishment.reviews),
-    totalReservations: establishment.reservations?.length || 0,
-    activeReservations: establishment.reservations?.filter(r => r.status === 'active').length || 0
-  })) || [];
-}
-
-private calculateAverageRating(reviews: { rating: number }[]): number {
-  if (!reviews?.length) return 0;
-  const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
-  return sum / reviews.length;
-}
-```
-
 ### Pagination Support
 ```typescript
 async getListPaginated(
@@ -161,62 +131,6 @@ async getListPaginated(
       totalPages: Math.ceil((count || 0) / pageSize)
     }
   };
-}
-```
-
-### File Upload Handling
-```typescript
-async uploadImage(file: File, establishmentId: string): Promise<string> {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${establishmentId}-${Date.now()}.${fileExt}`;
-  const filePath = `establishments/${fileName}`;
-  
-  const { error: uploadError } = await this.supabase.storage
-    .from('establishment-images')
-    .upload(filePath, file);
-  
-  if (uploadError) throw uploadError;
-  
-  const { data } = this.supabase.storage
-    .from('establishment-images')
-    .getPublicUrl(filePath);
-  
-  return data.publicUrl;
-}
-
-async deleteImage(imageUrl: string): Promise<void> {
-  const path = imageUrl.split('/').slice(-2).join('/');
-  const { error } = await this.supabase.storage
-    .from('establishment-images')
-    .remove([path]);
-  
-  if (error) throw error;
-}
-```
-
-### Real-time Subscriptions
-```typescript
-async subscribeToEstablishments(
-  callback: (establishment: iEstablishment) => void
-): Promise<RealtimeChannel> {
-  return this.supabase
-    .channel('establishments')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'establishments'
-      },
-      (payload) => {
-        callback(payload.new as iEstablishment);
-      }
-    )
-    .subscribe();
-}
-
-async unsubscribeFromEstablishments(channel: RealtimeChannel): Promise<void> {
-  await this.supabase.removeChannel(channel);
 }
 ```
 
@@ -341,19 +255,4 @@ describe('EstablishmentApi', () => {
     expect(mockSupabase.from).toHaveBeenCalledWith('establishments');
   });
 });
-```
-
-## API Documentation Standards
-
-### Method Documentation
-```typescript
-/**
- * Retrieves a list of establishments with optional search filtering
- * @param searchTerm - Optional search term to filter establishments by name
- * @returns Promise resolving to an array of establishment previews
- * @throws {ApiError} When the request fails
- */
-async getList(searchTerm?: string): Promise<iEstablishmentPreview[]> {
-  // Implementation
-}
 ```
