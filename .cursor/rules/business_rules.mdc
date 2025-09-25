@@ -24,7 +24,7 @@ A single, clear sentence describing what this software does and for whom.
 ### Tech Stack
 
   * **Language**: TypeScript 5.4+
-  * **Framework**: Angular 18+ (Zoneless)
+  * **Framework**: Angular 20+ (Zoneless)
   * **Backend/DB**: Supabase
   * **Key Libraries**: None. State management relies on built-in Angular Signals.
 

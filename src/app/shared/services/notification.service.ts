@@ -18,6 +18,28 @@ export class NotificationService {
       notifications.filter((n) => n.id !== id)
     );
   }
+
+  success(message: string, title?: string): void {
+    this.addNotification({
+      id: this.generateId(),
+      message,
+      type: 'success',
+      timestamp: new Date(),
+    });
+  }
+
+  error(message: string, title?: string): void {
+    this.addNotification({
+      id: this.generateId(),
+      message,
+      type: 'error',
+      timestamp: new Date(),
+    });
+  }
+
+  private generateId(): string {
+    return Math.random().toString(36).substr(2, 9);
+  }
 }
 
 export interface Notification {

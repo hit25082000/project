@@ -1,5 +1,5 @@
 ---
-description: Angular component patterns, smart vs dumb components, and component architecture
+description: Complete guide to create components his patterns, smart vs dumb components, and component architecture
 globs:
 alwaysApply: false
 ---

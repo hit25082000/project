@@ -1,10 +1,8 @@
 ---
-description: Service patterns, state management with signals, and business logic organization
+description: Complete guide to create Services his patterns, state management with signals, and business logic organization
 globs:
 alwaysApply: false
 ---
-
-# Service Patterns
 
 Services manage application state using Angular Signals and handle all business logic. They act as the bridge between the presentation layer (components) and the data layer (APIs).
 
@@ -17,273 +15,140 @@ Services manage application state using Angular Signals and handle all business 
 5. Handle loading states and error management
 6. Implement optimistic updates where appropriate
 
-## Basic Service Pattern
+## Resource Selection Rules
+
+**Rule 1: Use `rxResource` for Promise-based APIs wrapped with `from()`**
+**Rule 2: Use `resource()` for direct Promise-based APIs**
+**Rule 3: Use `toSignal()` for simple observable conversions**
 
 ```typescript
-// establishment.service.ts
+// rxResource pattern (for Promise-based APIs wrapped with from())
+private readonly listResource = rxResource({
+  stream: () => from(this.api.getUsers(this.searchTerm())),
+});
+
+// resource() pattern (for direct Promise-based APIs)
+private readonly listResource = resource({
+  request: () => ({ search: this.searchTerm() }),
+  loader: ({ search }) => this.api.getUsers(search),
+});
+```
+
+## Signal Simplification Rules
+
+**Rule 4: Consolidate loading and error signals - use single signals for all resources**
+**Rule 5: Make internal state private, expose only what components need**
+
+```typescript
+// ❌ Avoid multiple signals
+readonly isLoading = computed(() => this.listResource.isLoading());
+readonly isDetailsLoading = computed(() => this.detailsResource.isLoading());
+readonly error = computed(() => this.listResource.error());
+readonly detailsError = computed(() => this.detailsResource.error());
+
+// ✅ Use consolidated signals
+readonly isLoading = computed(
+  () => this.listResource.isLoading() || this.detailsResource.isLoading()
+);
+readonly error = computed(
+  () => this.listResource.error() || this.detailsResource.error()
+);
+
+// ✅ Private internal state
+private readonly selectedId = signal<string | null>(null);
+readonly searchTerm = signal<string>(''); // Public for external control
+```
+
+## Service Pattern
+
+```typescript
 @Injectable({ providedIn: 'root' })
-export class EstablishmentService {
+export class UserService {
   // Dependencies
-  private api = inject(EstablishmentApi);
-  
+  private api = inject(UserApi);
+  private errorHandler = inject(GlobalErrorHandler);
+  private notificationService = inject(NotificationService);
+
   // State management
-  readonly selectedId = signal<string | null>(null);
+  private readonly selectedId = signal<string | null>(null);
   readonly searchTerm = signal<string>('');
-  
-  // List resource (Preview data)
-  private readonly listResource = resource({
-    request: () => ({ search: this.searchTerm() }),
-    loader: ({ search }) => this.api.getList(search),
+
+  // Resources
+  private readonly listResource = rxResource({
+    stream: () => from(this.api.getUsers(this.searchTerm())),
   });
-  
-  // Details resource (Full data)
-  private readonly detailsResource = resource({
-    request: () => this.selectedId(),
-    loader: (id: string) => this.api.getDetailsById(id),
+
+  private readonly detailsResource = rxResource({
+    stream: () => {
+      const id = this.selectedId();
+      return id ? from(this.api.getUserById(id)) : from(new Promise(() => {}));
+    },
   });
-  
-  // Public signals
-  readonly establishments = toSignal(this.listResource.value, { initialValue: [] });
-  readonly selectedItem = toSignal(this.detailsResource.value);
-  readonly isLoading = toSignal(this.listResource.loading);
-  readonly isDetailsLoading = toSignal(this.detailsResource.loading);
-  readonly error = toSignal(this.listResource.error);
-  
+
+  // Public signals - consolidated
+  readonly users = computed(() => this.listResource.value() || []);
+  readonly selectedUser = computed(() => this.detailsResource.value());
+  readonly isLoading = computed(
+    () => this.listResource.isLoading() || this.detailsResource.isLoading()
+  );
+  readonly error = computed(
+    () => this.listResource.error() || this.detailsResource.error()
+  );
+
   // Actions
   selectById(id: string): void {
     this.selectedId.set(id);
   }
-  
+
   search(term: string): void {
     this.searchTerm.set(term);
   }
-  
-  async create(establishment: iEstablishmentCreate): Promise<void> {
-    const newEstablishment = await this.api.create(establishment);
-    // Refresh list after creation
-    this.listResource.refetch();
-  }
-  
-  async update(id: string, establishment: iEstablishmentUpdate): Promise<void> {
-    await this.api.update(id, establishment);
-    // Refresh both list and details
-    this.listResource.refetch();
-    if (this.selectedId() === id) {
-      this.detailsResource.refetch();
-    }
-  }
-  
-  async delete(id: string): Promise<void> {
-    await this.api.delete(id);
-    // Refresh list and clear selection if needed
-    this.listResource.refetch();
-    if (this.selectedId() === id) {
-      this.selectedId.set(null);
-    }
-  }
-}
-```
 
-## Advanced Service Patterns
-
-### Optimistic Updates
-```typescript
-async updateWithOptimisticUpdate(id: string, update: iEstablishmentUpdate): Promise<void> {
-  // Store current state for rollback
-  const currentItem = this.selectedItem();
-  if (!currentItem) return;
-  
-  // Apply optimistic update
-  const optimisticItem = { ...currentItem, ...update };
-  this.selectedItem.set(optimisticItem);
-  
-  try {
-    await this.api.update(id, update);
-    // Refresh to get server state
-    this.detailsResource.refetch();
-  } catch (error) {
-    // Rollback on error
-    this.selectedItem.set(currentItem);
-    throw error;
-  }
-}
-```
-
-### Caching and Invalidation
-```typescript
-export class EstablishmentService {
-  private cache = new Map<string, any>();
-  private cacheTimeout = 5 * 60 * 1000; // 5 minutes
-  
-  private getCachedData<T>(key: string): T | null {
-    const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      return cached.data;
-    }
-    return null;
-  }
-  
-  private setCachedData<T>(key: string, data: T): void {
-    this.cache.set(key, { data, timestamp: Date.now() });
-  }
-  
-  async getDetailsById(id: string): Promise<iEstablishment | null> {
-    const cacheKey = `establishment-${id}`;
-    const cached = this.getCachedData<iEstablishment>(cacheKey);
-    if (cached) return cached;
-    
-    const data = await this.api.getDetailsById(id);
-    if (data) {
-      this.setCachedData(cacheKey, data);
-    }
-    return data;
-  }
-  
-  invalidateCache(pattern?: string): void {
-    if (pattern) {
-      for (const key of this.cache.keys()) {
-        if (key.includes(pattern)) {
-          this.cache.delete(key);
-        }
-      }
-    } else {
-      this.cache.clear();
-    }
-  }
-}
-```
-
-### Error Handling and Retry Logic
-```typescript
-export class EstablishmentService {
-  private readonly retryAttempts = 3;
-  private readonly retryDelay = 1000;
-  
-  private async withRetry<T>(
-    operation: () => Promise<T>,
-    attempts: number = this.retryAttempts
-  ): Promise<T> {
+  async createUser(user: UserCreate): Promise<User> {
     try {
-      return await operation();
+      const newUser = await this.api.createUser(user);
+      this.notificationService.success('User created successfully');
+      return newUser;
     } catch (error) {
-      if (attempts > 1 && this.isRetryableError(error)) {
-        await this.delay(this.retryDelay);
-        return this.withRetry(operation, attempts - 1);
-      }
+      this.errorHandler.handleError(error, 'Creating user');
       throw error;
     }
   }
-  
-  private isRetryableError(error: any): boolean {
-    // Network errors, 5xx status codes, etc.
-    return error?.status >= 500 || error?.code === 'NETWORK_ERROR';
-  }
-  
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-  
-  async create(establishment: iEstablishmentCreate): Promise<void> {
-    await this.withRetry(() => this.api.create(establishment));
-    this.listResource.refetch();
-  }
-}
-```
 
-## Service Naming Conventions
-
-### File Naming
-- Service files: `[feature].service.ts`
-  - `establishment.service.ts`
-  - `user.service.ts`
-  - `notification.service.ts`
-
-### Class Naming
-- Service classes: `[Feature]Service`
-  - `EstablishmentService`
-  - `UserService`
-  - `NotificationService`
-
-### Method Naming
-- Get methods: `get[Resource]`, `get[Resource]ById`
-  - `getEstablishments()`, `getEstablishmentById()`
-- Action methods: `[action][Resource]`
-  - `createEstablishment()`, `updateEstablishment()`, `deleteEstablishment()`
-- State methods: `[action]State`
-  - `selectById()`, `clearSelection()`, `setSearchTerm()`
-
-## Service Testing Patterns
-
-### Unit Tests
-```typescript
-describe('EstablishmentService', () => {
-  let service: EstablishmentService;
-  let mockApi: jasmine.SpyObj<EstablishmentApi>;
-  
-  beforeEach(() => {
-    mockApi = jasmine.createSpyObj('EstablishmentApi', ['getList', 'getDetailsById']);
-    TestBed.configureTestingModule({
-      providers: [
-        EstablishmentService,
-        { provide: EstablishmentApi, useValue: mockApi }
-      ]
-    });
-    service = TestBed.inject(EstablishmentService);
-  });
-  
-  it('should select establishment and load details', async () => {
-    const mockEstablishment = { id: '1', name: 'Test' };
-    mockApi.getDetailsById.and.returnValue(Promise.resolve(mockEstablishment));
-    
-    service.selectById('1');
-    
-    expect(service.selectedId()).toBe('1');
-    // Wait for async operations
-    await fixture.whenStable();
-    expect(service.selectedItem()).toEqual(mockEstablishment);
-  });
-});
-```
-
-## Service Communication Patterns
-
-### Cross-Service Communication
-```typescript
-// notification.service.ts
-@Injectable({ providedIn: 'root' })
-export class NotificationService {
-  private notifications = signal<iNotification[]>([]);
-  
-  readonly currentNotifications = this.notifications.asReadonly();
-  
-  addNotification(notification: Omit<iNotification, 'id'>): void {
-    const newNotification = {
-      ...notification,
-      id: crypto.randomUUID()
-    };
-    this.notifications.update(list => [...list, newNotification]);
-  }
-}
-
-// establishment.service.ts
-@Injectable({ providedIn: 'root' })
-export class EstablishmentService {
-  private notificationService = inject(NotificationService);
-  
-  async delete(id: string): Promise<void> {
+  async updateUser(id: string, user: UserUpdate): Promise<User> {
     try {
-      await this.api.delete(id);
-      this.notificationService.addNotification({
-        type: 'success',
-        message: 'Establishment deleted successfully'
-      });
-      this.listResource.refetch();
+      const updatedUser = await this.api.updateUser(id, user);
+      this.notificationService.success('User updated successfully');
+      return updatedUser;
     } catch (error) {
-      this.notificationService.addNotification({
-        type: 'error',
-        message: 'Failed to delete establishment'
-      });
+      this.errorHandler.handleError(error, 'Updating user');
+      throw error;
+    }
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    try {
+      await this.api.deleteUser(id);
+      this.notificationService.success('User deleted successfully');
+      
+      if (this.selectedId() === id) {
+        this.selectedId.set(null);
+      }
+    } catch (error) {
+      this.errorHandler.handleError(error, 'Deleting user');
+      throw error;
     }
   }
 }
 ```
+
+### Error Handling
+- **Error Handling**: See `error_handling_patterns.md` 
+- **Notifications**: See `notification_patterns`
+
+### Reference Documentation (READ ONLY IF NEEDED)
+- **Detailed Error Handling and Retry**: See `service_error_reference.md` 
+- **Detailed Testing Examples**: See `service_test_reference.md`
+- **Naming Convention Examples**: See `service_naming_reference.md`
+- **Optimistic Patterns**: See `service_optmistic_reference.md`
+- **Cache Patterns**: See `service_cache_reference.md`
