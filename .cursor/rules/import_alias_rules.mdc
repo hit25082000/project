@@ -1,7 +1,6 @@
 ---
-description: Import path aliases and module resolution patterns
-globs:
-alwaysApply: true
+description: Guide to Import path aliases and module resolution patterns
+alwaysApply: false
 ---
 
 ### Path Aliases & Imports
@@ -14,4 +13,23 @@ To maintain clean and consistent import paths, use the following TypeScript path
 @widget/* // app/widget/*
 @domain/* // app/domain/*
 @env/* // environments/*
+```
+
+### Import Examples
+```typescript
+// Core imports
+import { AuthGuard } from '@core/guards/auth.guard';
+import { AppLayout } from '@core/layout/app.layout';
+
+// Shared imports
+import { NotificationService } from '@shared/services/notification.service';
+import { LoadingSpinner } from '@shared/components/loading-spinner.component';
+
+// Widget imports
+import { VButton } from '@widget/components/v-button.component';
+import { VCard } from '@widget/components/v-card.component';
+
+// Domain imports
+import { EstablishmentService } from '@domain/establishment/establishment.service';
+import { UserApi } from '@domain/user/user.api';
 ```

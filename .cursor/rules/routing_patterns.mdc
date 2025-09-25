@@ -1,12 +1,10 @@
 ---
-description: Angular 20 routing patterns with enhanced scroll options and child resolvers
+description: Guido to routing patterns with enhanced scroll options and child resolvers
 globs:
 alwaysApply: false
 ---
 
-# Angular 20 Routing Patterns
-
-Angular 20 enhances routing capabilities with new scroll options for `ViewportScroller.scrollToAnchor()` and `scrollToPosition()` methods, plus child resolvers that can access parent route data.
+Routing capabilities with new scroll options for `ViewportScroller.scrollToAnchor()` and `scrollToPosition()` methods, plus child resolvers that can access parent route data.
 
 ## Enhanced Scroll Options
 

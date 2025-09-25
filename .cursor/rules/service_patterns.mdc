@@ -149,6 +149,5 @@ export class UserService {
 ### Reference Documentation (READ ONLY IF NEEDED)
 - **Detailed Error Handling and Retry**: See `service_error_reference.md` 
 - **Detailed Testing Examples**: See `service_test_reference.md`
-- **Naming Convention Examples**: See `service_naming_reference.md`
 - **Optimistic Patterns**: See `service_optmistic_reference.md`
 - **Cache Patterns**: See `service_cache_reference.md`

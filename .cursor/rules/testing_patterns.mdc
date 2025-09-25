@@ -1,5 +1,5 @@
 ---
-description: Testing patterns, unit tests, integration tests, and test organization
+description: Guide for implement Testing his patterns, unit tests, integration tests, and test organization
 globs:
 alwaysApply: false
 ---

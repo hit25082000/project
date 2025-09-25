@@ -1,5 +1,5 @@
 ---
-description: File upload patterns, Supabase storage integration, and file handling standards
+description: Guide for implement File upload patterns, Supabase storage integration, and file handling standards
 globs:
 alwaysApply: false
 ---

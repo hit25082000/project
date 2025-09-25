@@ -1,12 +1,10 @@
 ---
-description: template syntax including exponentiation operator and new features
+description: Guide to implement html template syntax including exponentiation operator and new features
 globs:
 alwaysApply: false
 ---
 
-# Angular 20 Template Syntax
-
-Angular 20 introduces enhanced template syntax with support for the exponentiation operator (`**`), tagged template literals, and the `in` operator for more expressive and concise code.
+Template syntax with support for the exponentiation operator (`**`), tagged template literals, and the `in` operator for more expressive and concise code.
 
 ## New Template Operators (Angular 20)
 

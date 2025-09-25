@@ -1,6 +1,5 @@
 ---
 description: Naming conventions for files, classes, selectors, and variables
-globs:
 alwaysApply: false
 ---
 
@@ -98,34 +97,7 @@ Use `kebab-case` with the format `feature.type.ts`
   - `eEstablishmentCategory.RESTAURANT`
   - `eUserRole.ADMIN`
 
-## Import Path Aliases
 
-### Path Aliases
-```typescript
-@core/*      // app/core/*
-@shared/*    // app/shared/*
-@widget/*    // app/widget/*
-@domain/*    // app/domain/*
-```
-
-### Import Examples
-```typescript
-// Core imports
-import { AuthGuard } from '@core/guards/auth.guard';
-import { AppLayout } from '@core/layout/app.layout';
-
-// Shared imports
-import { NotificationService } from '@shared/services/notification.service';
-import { LoadingSpinner } from '@shared/components/loading-spinner.component';
-
-// Widget imports
-import { VButton } from '@widget/components/v-button.component';
-import { VCard } from '@widget/components/v-card.component';
-
-// Domain imports
-import { EstablishmentService } from '@domain/establishment/establishment.service';
-import { UserApi } from '@domain/user/user.api';
-```
 
 ## Database and API Naming
 

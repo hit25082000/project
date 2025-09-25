@@ -99,6 +99,5 @@ export class EstablishmentApi {
 
 ### Reference Documentation (READ ONLY IF NEEDED)
 - **Detailed Testing Examples**: See `api_testing_reference.md`
-- **Naming Convention Examples**: See `api_naming_reference.md`
 - **Helper Functions**: See `api_testing_reference.md#helper-functions`
 - **Advanced Patterns**: See `api_testing_reference.md#advanced-patterns`
