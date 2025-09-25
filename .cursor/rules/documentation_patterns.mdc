@@ -1,36 +1,81 @@
 ---
-description: Documentation patterns, code documentation standards, and documentation best practices
+description: Documentation standards for code comments, automated guidance, and system references
 globs:
 alwaysApply: false
 ---
 
 # Documentation Patterns
 
-This document defines comprehensive documentation patterns, code documentation standards, and documentation best practices for the application.
+Documentation standards aligned with architecture rules in `coding_patterns.mdc` and naming rules in `naming_conventions.mdc`.
 
-## Documentation Principles
+## Core Principles
 
-1. **Clear and Concise**: Write documentation that is easy to understand
-2. **Comprehensive Coverage**: Document all public APIs, interfaces, and complex logic
-3. **Consistent Format**: Use consistent formatting and structure
-4. **Up-to-Date**: Keep documentation synchronized with code changes
-5. **User-Focused**: Write documentation from the user's perspective
-6. **Examples**: Provide practical examples where helpful
-7. **Searchable**: Use clear, descriptive names and keywords
+1. **Clear and Concise** – Keep wording direct and actionable
+2. **Complete Coverage** – Document public APIs, complex logic, and implicit behavior
+3. **Consistent Format** – Use the templates below for classes, methods, interfaces, and enums
+4. **Current** – Update docs alongside code changes
+5. **Audience-Focused** – Tailor comments to future maintainers and automated agents
+6. **Examples** – Provide runnable examples when useful
+7. **Searchable** – Use clear terms and keywords to help agents navigate
+
+## Automated Agent Guidance
+
+### Inline Keywords for Agents
+Use these prefixes in comments to help automated agents parse intent:
+- `AGENT-TODO:` short description of remaining work or follow-up
+- `AGENT-NOTE:` important context the agent must retain
+- `AGENT-DECISION:` explanation of architectural or business decisions
+- `AGENT-REFERENCE:` pointer to other files or documentation
+
+Example:
+```typescript
+// AGENT-DECISION: Maintaining optimistic cache to keep UI responsive
+// AGENT-REFERENCE: See service_optmistic_reference.md for undo logic
+```
+
+### Structured Comment Blocks
+When documenting complex logic, start with a one-line summary followed by structured bullet points:
+```typescript
+// SUMMARY: Sync local state with persisted Supabase data
+// INPUTS: userId (string), payload (UserUpdate)
+// SIDE-EFFECTS: triggers audit log via AuditService
+// FAILURE-MODES: throws ValidationError, ApiError
+```
+Automated tools can pair these keywords with code to build documentation.
+
+## Advanced System Documentation
+
+### Root-Level Context Files
+For complex subsystems, create Markdown references next to the entry point directory:
+- `readme.md` – Overview of the subsystem (responsibilities, diagrams, key workflows)
+- `integration-notes.md` – External dependencies, environment variables, API contracts
+- `troubleshooting.md` – Known issues, operational runbooks
+- Link these files from relevant rule documents using `AGENT-REFERENCE` comments
+
+### Directory Naming Conventions
+- Place documentation files at `src/app/<domain>/docs/` for domain-level context
+- Use `docs/overview.md`, `docs/data-flow.md`, `docs/api-contracts.md` as needed
+- Reference them in code with `AGENT-REFERENCE` comments for quick lookup
+
+### Change Logs for Critical Modules
+- Maintain `CHANGELOG.md` in root of critical domains (e.g., `src/app/domain/payments/CHANGELOG.md`)
+- Include summary entries with dates, author, and reason for change
+- Agents should append new entries when refactoring significant behavior
 
 ## Code Documentation Standards
 
-### JSDoc Comments
+### JSDoc Templates
 ```typescript
 /**
- * Retrieves a list of establishments with optional search filtering
- * @param searchTerm - Optional search term to filter establishments by name
- * @returns Promise resolving to an array of establishment previews
+ * Brief summary describing the responsibility
+ *
+ * @param searchTerm Optional search term to filter establishments by name
+ * @returns Promise resolving to establishment previews
  * @throws {ApiError} When the request fails
  * @example
  * ```typescript
  * const establishments = await establishmentApi.getList('restaurant');
- * console.log(establishments); // Array of establishment objects
+ * console.log(establishments);
  * ```
  */
 async getList(searchTerm?: string): Promise<iEstablishmentPreview[]> {
@@ -41,17 +86,17 @@ async getList(searchTerm?: string): Promise<iEstablishmentPreview[]> {
 ### Class Documentation
 ```typescript
 /**
- * Service for managing establishment data and operations
- * 
- * This service provides methods for CRUD operations on establishments,
- * including search, filtering, and pagination capabilities.
- * 
+ * EstablishmentService handles establishment CRUD operations.
+ *
+ * RESPONSIBILITIES:
+ * - Load establishment collections and details
+ * - Coordinate optimistic updates and notifications
+ * - Expose Signals consumed by smart components
+ *
  * @example
- * ```typescript
  * const service = inject(EstablishmentService);
- * await service.loadEstablishments();
- * const establishments = service.establishments();
- * ```
+ * await service.load();
+ * const list = service.establishments();
  */
 @Injectable({ providedIn: 'root' })
 export class EstablishmentService {
@@ -62,27 +107,12 @@ export class EstablishmentService {
 ### Interface Documentation
 ```typescript
 /**
- * Configuration interface for dynamic form generation
- * 
- * Defines the structure and validation rules for form fields,
- * including field types, validation rules, and display options.
- * 
+ * Dynamic form configuration used by <v-dynamic-form>.
+ *
  * @interface DynamicFormConfig
- * @property {DynamicFieldConfig[]} fields - Array of field configurations
- * @property {FormValidationRules} validation - Form-level validation rules
- * @property {FormDisplayOptions} display - Display and layout options
- * 
- * @example
- * ```typescript
- * const config: DynamicFormConfig = {
- *   fields: [
- *     { name: 'email', type: 'email', required: true },
- *     { name: 'password', type: 'password', required: true }
- *   ],
- *   validation: { validateOnSubmit: true },
- *   display: { layout: 'vertical' }
- * };
- * ```
+ * @property fields Definition for each form field
+ * @property validation Form-level rules
+ * @property display Layout hints for the renderer
  */
 export interface DynamicFormConfig {
   fields: DynamicFieldConfig[];
@@ -91,139 +121,40 @@ export interface DynamicFormConfig {
 }
 ```
 
-### Method Documentation
-```typescript
-/**
- * Creates a new establishment with the provided data
- * 
- * Validates the input data, creates the establishment record,
- * and returns the created establishment with generated ID.
- * 
- * @param establishment - The establishment data to create
- * @returns Promise resolving to the created establishment
- * @throws {ValidationError} When input data is invalid
- * @throws {ApiError} When the creation fails
- * 
- * @example
- * ```typescript
- * const newEstablishment = {
- *   name: 'My Restaurant',
- *   description: 'A great place to eat',
- *   address: '123 Main St'
- * };
- * 
- * const created = await establishmentApi.create(newEstablishment);
- * console.log(created.id); // Generated establishment ID
- * ```
- */
-async create(establishment: iEstablishmentCreate): Promise<iEstablishment> {
-  // Implementation
-}
-```
-
-### Property Documentation
-```typescript
-/**
- * Signal containing the current list of establishments
- * 
- * This signal is automatically updated when establishments are loaded,
- * created, updated, or deleted. Components can subscribe to changes
- * using Angular's signal reactivity system.
- * 
- * @readonly
- * @returns Signal containing array of establishment objects
- */
-readonly establishments = signal<iEstablishment[]>([]);
-
-/**
- * Signal indicating whether an operation is currently in progress
- * 
- * Used to show loading states in the UI. Automatically managed
- * by the service during async operations.
- * 
- * @readonly
- * @returns Signal containing boolean loading state
- */
-readonly loading = signal(false);
-```
-
 ### Enum Documentation
 ```typescript
 /**
- * Enumeration of supported dynamic form field types
- * 
- * Defines the available field types that can be used in dynamic forms,
- * each with specific validation and rendering behavior.
- * 
- * @enum {string}
- * @example
- * ```typescript
- * const fieldType = DynamicFieldType.EMAIL;
- * if (fieldType === DynamicFieldType.EMAIL) {
- *   // Handle email field validation
- * }
- * ```
+ * Supported dynamic field types rendered by <v-dynamic-form>.
  */
 export enum DynamicFieldType {
-  /** Single-line text input field */
   TEXT = 'text',
-  
-  /** Multi-line text input field */
   TEXTAREA = 'textarea',
-  
-  /** Email input field with validation */
   EMAIL = 'email',
-  
-  /** Password input field (hidden text) */
   PASSWORD = 'password',
-  
-  /** Numeric input field */
   NUMBER = 'number',
-  
-  /** Date picker field */
   DATE = 'date',
-  
-  /** Dropdown selection field */
   SELECT = 'select',
-  
-  /** Checkbox field */
   CHECKBOX = 'checkbox',
-  
-  /** Radio button group field */
   RADIO = 'radio'
 }
 ```
 
 ## API Documentation Standards
 
-### API Method Documentation
+Document API methods with parameters, error cases, and examples. Example snippet:
 ```typescript
 /**
- * Retrieves a paginated list of establishments with optional search filtering
- * 
- * Supports pagination, search filtering, and sorting. Returns both the data
- * and pagination metadata for building paginated UI components.
- * 
- * @param page - Page number (1-based, defaults to 1)
- * @param pageSize - Number of items per page (defaults to 10)
- * @param searchTerm - Optional search term to filter establishments by name
- * @returns Promise resolving to paginated response with data and metadata
- * @throws {ValidationError} When pagination parameters are invalid
+ * Retrieves paginated establishments.
+ *
+ * @param page Page number (1-based)
+ * @param pageSize Items per page
+ * @param searchTerm Optional filter by name
+ * @returns Paginated data with metadata
+ * @throws {ValidationError} When parameters are invalid
  * @throws {ApiError} When the request fails
- * 
- * @example
- * ```typescript
- * // Get first page with 20 items
- * const result = await establishmentApi.getListPaginated(1, 20);
- * console.log(result.data); // Array of establishments
- * console.log(result.pagination.totalPages); // Total number of pages
- * 
- * // Search for restaurants
- * const searchResult = await establishmentApi.getListPaginated(1, 10, 'restaurant');
- * ```
  */
 async getListPaginated(
-  page: number = 1, 
+  page: number = 1,
   pageSize: number = 10,
   searchTerm?: string
 ): Promise<iPaginatedResponse<iEstablishmentPreview>> {
@@ -231,322 +162,27 @@ async getListPaginated(
 }
 ```
 
-### Error Documentation
-```typescript
-/**
- * Custom error class for API-related errors
- * 
- * Extends the base Error class with additional properties for
- * error classification, HTTP status codes, and detailed error information.
- * 
- * @class ApiError
- * @extends Error
- * @param message - Human-readable error message
- * @param code - Machine-readable error code
- * @param statusCode - HTTP status code (if applicable)
- * @param details - Additional error details or context
- * 
- * @example
- * ```typescript
- * try {
- *   await establishmentApi.getById('invalid-id');
- * } catch (error) {
- *   if (error instanceof ApiError) {
- *     console.log(error.code); // 'NOT_FOUND'
- *     console.log(error.statusCode); // 404
- *   }
- * }
- * ```
- */
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public code?: string,
-    public statusCode?: number,
-    public details?: any
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-```
+## Component and Service Documentation
 
-## Component Documentation
-
-### Component Class Documentation
-```typescript
-/**
- * Dynamic form component for rendering forms based on configuration
- * 
- * This component generates form fields dynamically based on the provided
- * configuration object. It supports various field types, validation rules,
- * and custom styling options.
- * 
- * @component
- * @selector app-dynamic-form
- * 
- * @example
- * ```typescript
- * // In parent component
- * const formConfig: DynamicFormConfig = {
- *   fields: [
- *     { name: 'name', type: 'text', required: true, label: 'Full Name' },
- *     { name: 'email', type: 'email', required: true, label: 'Email Address' }
- *   ]
- * };
- * ```
- * 
- * @example
- * ```html
- * <!-- In template -->
- * <app-dynamic-form 
- *   [config]="formConfig" 
- *   (formSubmit)="onFormSubmit($event)"
- *   (formChange)="onFormChange($event)">
- * </app-dynamic-form>
- * ```
- */
-@Component({
-  selector: 'app-dynamic-form',
-  templateUrl: './dynamic-form.component.html',
-  styleUrls: ['./dynamic-form.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
-})
-export class DynamicFormComponent {
-  // Implementation
-}
-```
-
-### Input/Output Documentation
-```typescript
-/**
- * Configuration object defining the form structure and behavior
- * 
- * Contains field definitions, validation rules, and display options
- * for the dynamic form. Changes to this input will trigger form
- * regeneration.
- * 
- * @input
- * @required
- */
-@Input({ required: true }) config!: DynamicFormConfig;
-
-/**
- * Event emitted when the form is submitted with valid data
- * 
- * Emitted only when all validation rules pass. The event contains
- * the form data as a key-value object.
- * 
- * @output
- * @event
- */
-@Output() formSubmit = new EventEmitter<Record<string, any>>();
-
-/**
- * Event emitted when any form field value changes
- * 
- * Emitted on every field change, regardless of validation status.
- * Useful for real-time form validation or dependent field updates.
- * 
- * @output
- * @event
- */
-@Output() formChange = new EventEmitter<Record<string, any>>();
-```
-
-## Service Documentation
-
-### Service Class Documentation
-```typescript
-/**
- * Service for managing file upload operations
- * 
- * Provides methods for uploading files to Supabase storage, including
- * validation, progress tracking, and error handling. Supports various
- * file types with configurable size limits and validation rules.
- * 
- * @service
- * @injectable
- * 
- * @example
- * ```typescript
- * // Inject the service
- * const fileUpload = inject(FileUploadService);
- * 
- * // Upload a file with progress tracking
- * const file = event.target.files[0];
- * const imageUrl = await fileUpload.uploadImage(file, 'establishment-123');
- * ```
- */
-@Injectable({ providedIn: 'root' })
-export class FileUploadService {
-  // Implementation
-}
-```
-
-### Service Method Documentation
-```typescript
-/**
- * Uploads an image file to Supabase storage
- * 
- * Validates the file type and size, generates a unique filename,
- * uploads to the specified bucket, and returns the public URL.
- * Includes progress tracking and comprehensive error handling.
- * 
- * @param file - The image file to upload
- * @param entityId - Unique identifier for the entity (used in filename)
- * @param onProgress - Optional callback for upload progress updates
- * @returns Promise resolving to the public URL of the uploaded image
- * @throws {FileValidationError} When file validation fails
- * @throws {FileUploadError} When upload operation fails
- * 
- * @example
- * ```typescript
- * const file = event.target.files[0];
- * 
- * // Upload with progress tracking
- * const imageUrl = await fileUpload.uploadImage(
- *   file, 
- *   'establishment-123',
- *   (progress) => console.log(`Upload progress: ${progress}%`)
- * );
- * 
- * // Use the returned URL
- * console.log('Image uploaded to:', imageUrl);
- * ```
- */
-async uploadImage(
-  file: File, 
-  entityId: string,
-  onProgress?: (progress: number) => void
-): Promise<string> {
-  // Implementation
-}
-```
-
-## README Documentation
-
-### Project README Structure
-```markdown
-# Project Name
-
-Brief description of the project and its purpose.
-
-## Features
-
-- Feature 1: Description
-- Feature 2: Description
-- Feature 3: Description
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (version X.X.X or higher)
-- npm or yarn
-- Supabase account
-
-### Installation
-
-1. Clone the repository
-2. Install dependencies
-3. Configure environment variables
-4. Run the application
-
-### Development
-
-```bash
-# Start development server
-npm run start
-
-# Run tests
-npm run test
-
-# Build for production
-npm run build
-```
-
-## API Documentation
-
-### Authentication
-
-Describe authentication flow and requirements.
-
-### Endpoints
-
-Document key API endpoints with examples.
-
-## Contributing
-
-Guidelines for contributing to the project.
-
-## License
-
-License information.
-```
-
-## Code Comments
-
-### Inline Comments
-```typescript
-// Calculate pagination range for Supabase query
-const from = (page - 1) * pageSize;
-const to = from + pageSize - 1;
-
-// Apply search filter if provided
-if (searchTerm) {
-  query = query.ilike('name', `%${searchTerm}%`);
-}
-
-// Handle specific Supabase error codes
-if (error.code === 'PGRST116') {
-  return null; // Not found - this is expected behavior
-}
-```
-
-### Block Comments
-```typescript
-/**
- * Complex algorithm for form validation
- * 
- * This method implements a multi-step validation process:
- * 1. Field-level validation (required, format, etc.)
- * 2. Cross-field validation (password confirmation, etc.)
- * 3. Business rule validation (unique constraints, etc.)
- * 
- * The validation is performed in order of priority, with
- * early termination on critical errors.
- */
-private validateForm(): ValidationResult {
-  // Implementation
-}
-```
+Provide class-level summaries and document Inputs/Outputs with inline `@input`/`@output` comments. For services, document business rules and Signal exposure.
 
 ## Documentation Best Practices
 
-### Do's
-- ✅ Write clear, concise descriptions
-- ✅ Include practical examples
-- ✅ Document all public APIs
-- ✅ Use consistent formatting
-- ✅ Keep documentation up-to-date
-- ✅ Include parameter and return type information
-- ✅ Document error conditions and exceptions
-- ✅ Use descriptive variable and function names
+### Do
+- Use structured comments to guide humans and agents
+- Reference external docs via `AGENT-REFERENCE`
+- Keep examples executable where possible
+- Update documentation during code reviews
 
-### Don'ts
-- ❌ Don't document obvious code
-- ❌ Don't use outdated examples
-- ❌ Don't skip documenting complex logic
-- ❌ Don't use inconsistent formatting
-- ❌ Don't document implementation details in public APIs
-- ❌ Don't use unclear or ambiguous language
-- ❌ Don't forget to update documentation when code changes
-- ❌ Don't use comments as a substitute for clear code
+### Don’t
+- Write redundant comments for obvious code
+- Leave outdated references or broken links
+- Mix languages inside documentation
 
-## Documentation Tools and Automation
+## Automation Hooks
 
-### JSDoc Configuration
+### JSDoc Tooling
+Keep JSDoc configuration up to date to auto-generate HTML references:
 ```json
 {
   "source": {
@@ -566,32 +202,15 @@ private validateForm(): ValidationResult {
 }
 ```
 
-### Documentation Generation
-```bash
-# Generate JSDoc documentation
-npx jsdoc -c jsdoc.conf.json
+### Automated Workflows
+- `npm run docs:generate` – Build documentation artifacts
+- `npm run docs:validate` – Validate doc consistency
+- Integrate these commands into CI pipelines for critical modules
 
-# Generate API documentation
-npm run docs:generate
-
-# Validate documentation
-npm run docs:validate
-```
-
-## Documentation Maintenance
-
-### Regular Updates
-- Review documentation during code reviews
-- Update examples when APIs change
-- Remove outdated information
-- Add new features to documentation
-- Validate links and examples
-
-### Documentation Review Checklist
-- [ ] All public APIs are documented
-- [ ] Examples are current and working
-- [ ] Parameter types and return types are specified
-- [ ] Error conditions are documented
-- [ ] Formatting is consistent
-- [ ] Links are valid
-- [ ] Code examples are tested
+## Maintenance Checklist
+- [ ] Public APIs documented
+- [ ] Examples compile
+- [ ] Parameters and return types specified
+- [ ] Error conditions documented
+- [ ] Links verified
+- [ ] Inline `AGENT-*` notes still relevant

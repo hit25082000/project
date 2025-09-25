@@ -6,13 +6,17 @@ alwaysApply: false
 
 # Notification Patterns
 
-The NotificationService provides a centralized way to manage user notifications using Angular Signals.
+Use the NotificationService as an extension of the flows described in `coding_patterns.mdc`, `service_patterns.mdc`, and `error_handling_patterns.mdc`.
 
 ## Notification Service Rules
 
 **Rule 1: Always inject NotificationService in services, never in components**
-**Rule 2: Use success/error methods for user feedback after async operations**
-**Rule 3: Keep notifications simple - message only, avoid complex titles**
+**Rule 2: Use success/error helpers for user feedback after async operations**
+**Rule 3: Keep notifications concise—message only, avoid complex titles**
+
+### References
+- `service_patterns.mdc` – State orchestration and actions
+- `error_handling_patterns.mdc` – Error handling before user feedback
 
 ## Usage Patterns
 

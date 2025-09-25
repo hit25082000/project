@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Testing Patterns
 
-Comprehensive testing strategies for Angular components, services, and APIs following best practices.
+Testing strategies aligned with each layer’s responsibilities (`coding_patterns.mdc`). See `component_patterns.mdc`, `service_patterns.mdc`, and `api_patterns.mdc` for specific scenarios.
 
 ## Test File Naming
 
@@ -342,6 +342,11 @@ export class TestHelpers {
   }
 }
 ```
+
+### Referências
+- `component_patterns.mdc` – papéis de componentes
+- `service_patterns.mdc` – estado e ações testadas
+- `api_patterns.mdc` – contratos esperados
 
 ## Test Configuration
 

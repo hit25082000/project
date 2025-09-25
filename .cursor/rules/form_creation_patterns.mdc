@@ -6,12 +6,16 @@ alwaysApply: false
 
 # Form Creation Patterns
 
-All forms should be built using the reusable `<v-dynamic-form>` component to standardize creation and maintain consistency across the application.
+Forms reuse the `<v-dynamic-form>` component. Align types with `data_modeling_patterns.mdc` and state practices with `coding_patterns.mdc`.
 
 ## Form Creation Pattern
 
 1. **Define a Configuration Constant**: In a `[form-name].constant.ts` file, create a function that returns the form's configuration array.
-2. **Pass Config to Component**: In your component's template, pass the configuration to the `<v-dynamic-form>`.
+2. **Pass Config to Component**: In your component's template, pass the configuration to `<v-dynamic-form>`.
+
+### References
+- `data_modeling_patterns.mdc` – Types and validation helpers
+- `reactivity_patterns.mdc` – Signals and effects for forms
 
 ### Example Implementation
 

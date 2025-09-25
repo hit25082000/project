@@ -1,53 +1,48 @@
 ---
-description: Directory structure, module organization, and file placement guidelines
+description: Directory layout, module organization, and file placement guidelines
 globs:
 alwaysApply: false
 ---
 
-# Módulo 2: Arquitetura de Diretórios e Imports
+# Directory Architecture and Imports
 
-Esta seção detalha como o projeto é estruturado fisicamente e como os módulos se comunicam.
+This document explains how the project is physically structured and how modules communicate. The layout follows the separation-of-concerns rules defined in `coding_patterns.mdc`.
 
-### Directory Architecture & Organization
+### Directory Architecture and Organization
 
-The project follows a modular architecture to ensure separation of concerns and scalability.
+The project uses a modular structure to keep concerns separated and scalable.
 
-  * **`/core` - Core System**: Contains essential, application-wide logic that is loaded once.
+  * **`/core` – Core System**: Application-wide logic that loads once.
     ```
     core/
     ├── guards/      # Authentication and authorization guards
     ├── pages/       # System-level pages (e.g., 404 Not Found)
-    └── layout/      # Main application layouts (e.g., shells with navbars)
+    └── layout/      # Main application layouts (shells with navbars)
     ```
-  * **`/shared` - Shared Resources**: Contains reusable code that is not tied to a specific business domain.
+  * **`/shared` – Shared Resources**: Reusable code that is business-agnostic.
     ```
     shared/
     ├── components/  # Shared, business-aware components
     ├── constants/   # Global constants
     └── services/    # Global services (e.g., notification service)
     ```
-  * **`/widget` - UI Widgets**: Contains generic, "dumb" UI components that are purely presentational.
+  * **`/widget` – UI Widgets**: Generic, presentation-only components.
     ```
     widget/
     ├── components/  # Reusable UI components (e.g., v-button, v-card)
     ├── directives/  # Custom attribute or structural directives
     └── pipes/       # Custom data transformation pipes
     ```
-  * **`/domain` - Business Modules**: Each folder represents a specific business domain of the application.
+  * **`/domain` – Business Modules**: One folder per business domain.
     ```
     domain/
     ├── auth/
     └── establishment/
-    ```
-    Each domain module follows a standard internal structure:
-    ```
-    domain/[module-name]/
-    ├── [module].routes.ts # Routes specific to this domain
-    ├── apis/              # Data access layer for this domain
-    ├── components/        # Components specific to this domain
-    ├── constants/         # Constants specific to this domain
-    ├── pages/             # Page components for this domain
-    └── services/          # State management services for this domain
+        ├── apis/
+        ├── components/
+        ├── services/
+        ├── interfaces/
+        └── ...
     ```
 
 #### Organization Rule

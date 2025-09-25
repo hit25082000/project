@@ -1,21 +1,21 @@
 ---
-description: Data modeling patterns, TypeScript interfaces, and type definitions
+description: Data modeling conventions, TypeScript interfaces, and derived types
 globs:
 alwaysApply: false
 ---
 
-# Data Modeling Patterns
+## Data Modeling Patterns
 
-Data modeling follows a consistent pattern where we define complete interfaces and create type variations for specific use cases using TypeScript's utility types.
+Modeling follows the conventions defined in `coding_patterns.mdc`. This guide complements those rules with concrete examples.
 
 ## Core Modeling Rules
 
-1. Define a single, complete interface for the entity, representing the full data model
-2. Create type variations for specific use cases using TypeScript's `Pick`, `Omit`, or custom utility types
-3. Use consistent naming conventions with the `i` prefix for interfaces
-4. Include proper TypeScript documentation for complex types
-5. Use enums for fixed sets of values
-6. Implement proper validation types for form data
+1. Start with a complete interface that represents the domain entity
+2. Derive variations with `Pick`, `Omit`, `Partial`, or feature-specific helpers
+3. Follow naming conventions described in `naming_conventions.mdc`
+4. Document complex types with JSDoc when needed
+5. Use enums for finite value sets
+6. Provide helper types for forms and validation
 
 ## Basic Model Pattern
 
@@ -76,7 +76,59 @@ export enum eReviewStatus {
 }
 ```
 
+## Advanced Type Patterns
+
+### Utility Types for Forms
+```typescript
+// Generic form types
+export type iFormData<T> = {
+  [K in keyof T]: T[K] extends string ? string | null : T[K];
+};
+
+export type iFormErrors<T> = {
+  [K in keyof T]?: string;
+};
+
+// Specific form types
+export type iEstablishmentFormData = iFormData<iEstablishmentForm>;
+export type iEstablishmentFormErrors = iFormErrors<iEstablishmentForm>;
+```
+
+### API Response Types
+```typescript
+// Generic API response wrapper
+export interface iApiResponse<T> {
+  data: T;
+  message?: string;
+  timestamp: string;
+}
+
+// Pagination wrapper
+export interface iPaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
+
+// Specific response types
+export type iEstablishmentListResponse = iPaginatedResponse<iEstablishmentPreview>;
+export type iEstablishmentDetailsResponse = iApiResponse<iEstablishmentDetails>;
+```
+
+### Referências
+- `coding_patterns.mdc` – Global type conventions
+- `form_creation_patterns.mdc` – Form integration
+- `template_syntax.mdc` – Template usage
+
 ## Related Entity Models
+
+### Referências
+- `coding_patterns.mdc` – Convenções globais
+- `form_creation_patterns.mdc` – Integração com formulários
 
 ```typescript
 // address.model.ts

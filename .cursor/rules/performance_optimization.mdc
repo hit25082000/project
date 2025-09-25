@@ -6,7 +6,12 @@ alwaysApply: false
 
 # Performance Optimization Patterns
 
-Angular 20 introduces zoneless change detection in developer preview, offering improved performance by eliminating Zone.js overhead.
+Apply these techniques together with `coding_patterns.mdc` (OnPush/Signals) and `reactivity_patterns.mdc`.
+
+### References
+- `coding_patterns.mdc` – Global guidelines
+- `reactivity_patterns.mdc` – Advanced Signal usage
+- `template_syntax.mdc` – Template optimization
 
 ## Zoneless Change Detection (Angular 20)
 

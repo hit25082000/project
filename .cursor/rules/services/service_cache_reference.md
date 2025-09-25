@@ -1,3 +1,5 @@
+Complements `service_patterns.mdc` and `performance_optimization.mdc` with caching strategies.
+
 ### Caching and Invalidation
 
 ```typescript

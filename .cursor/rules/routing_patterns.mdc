@@ -1,12 +1,14 @@
 ---
-description: Guido to routing patterns with enhanced scroll options and child resolvers
+description: Routing patterns with enhanced scroll options and child resolvers
 globs:
 alwaysApply: false
 ---
 
-Routing capabilities with new scroll options for `ViewportScroller.scrollToAnchor()` and `scrollToPosition()` methods, plus child resolvers that can access parent route data.
+Angular 20 routing patterns. Review `coding_patterns.mdc` for global principles and `template_syntax.mdc` for control-flow usage in pages.
 
 ## Enhanced Scroll Options
+
+> See `component_patterns.mdc` for navigation within page components
 
 ### ViewportScroller with Options
 ```typescript
@@ -79,6 +81,8 @@ export class ScrollablePageComponent {
 ```
 
 ## Child Resolvers with Parent Data Access
+
+> Maintain shared data via services as per `service_patterns.mdc`
 
 ### Parent Route with Resolver
 ```typescript
@@ -181,6 +185,8 @@ export class UserDetailsComponent {
 ```
 
 ## Advanced Routing Patterns
+
+> Align lazy loading and guards with `performance_optimization.mdc` and `error_handling_patterns.mdc`
 
 ### Lazy Loading with Preloading
 ```typescript
@@ -329,144 +335,4 @@ export class NavigationService {
 ```
 
 ### Breadcrumb Service
-```typescript
-@Injectable({ providedIn: 'root' })
-export class BreadcrumbService {
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  
-  readonly breadcrumbs = signal<Breadcrumb[]>([]);
-  
-  constructor() {
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd),
-      distinctUntilChanged()
-    ).subscribe(() => {
-      this.buildBreadcrumbs();
-    });
-  }
-  
-  private buildBreadcrumbs(): void {
-    const breadcrumbs: Breadcrumb[] = [];
-    let route = this.route.root;
-    
-    while (route.firstChild) {
-      route = route.firstChild;
-      
-      if (route.snapshot.data['breadcrumb']) {
-        const breadcrumb: Breadcrumb = {
-          label: route.snapshot.data['breadcrumb'],
-          url: this.getRouteUrl(route),
-          active: route === this.route
-        };
-        breadcrumbs.push(breadcrumb);
-      }
-    }
-    
-    this.breadcrumbs.set(breadcrumbs);
-  }
-  
-  private getRouteUrl(route: ActivatedRoute): string {
-    return route.snapshot.url.map(segment => segment.path).join('/');
-  }
-}
 ```
-
-## Route Testing Patterns
-
-### Testing Components with Routing
-```typescript
-describe('ProductDetailsComponent', () => {
-  let component: ProductDetailsComponent;
-  let fixture: ComponentFixture<ProductDetailsComponent>;
-  let mockProductService: jasmine.SpyObj<ProductService>;
-  
-  beforeEach(async () => {
-    mockProductService = jasmine.createSpyObj('ProductService', ['getProduct']);
-    
-    await TestBed.configureTestingModule({
-      imports: [ProductDetailsComponent, RouterTestingModule],
-      providers: [
-        { provide: ProductService, useValue: mockProductService }
-      ]
-    }).compileComponents();
-    
-    fixture = TestBed.createComponent(ProductDetailsComponent);
-    component = fixture.componentInstance;
-  });
-  
-  it('should load product based on route parameters', () => {
-    const mockProduct = { id: '1', name: 'Test Product', price: 100 };
-    mockProductService.getProduct.and.returnValue(of(mockProduct));
-    
-    // Simulate route parameters
-    TestBed.inject(ActivatedRoute).snapshot.paramMap = new Map([['id', '1']]);
-    
-    component.ngOnInit();
-    
-    expect(mockProductService.getProduct).toHaveBeenCalledWith('1', undefined);
-    expect(component.product()).toEqual(mockProduct);
-  });
-});
-```
-
-### Testing Route Guards
-```typescript
-describe('AuthGuard', () => {
-  let guard: AuthGuard;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
-  
-  beforeEach(() => {
-    mockAuthService = jasmine.createSpyObj('AuthService', ['isAuthenticated']);
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
-    
-    TestBed.configureTestingModule({
-      providers: [
-        AuthGuard,
-        { provide: AuthService, useValue: mockAuthService },
-        { provide: Router, useValue: mockRouter }
-      ]
-    });
-    
-    guard = TestBed.inject(AuthGuard);
-  });
-  
-  it('should allow access for authenticated users', () => {
-    mockAuthService.isAuthenticated.and.returnValue(true);
-    
-    const result = guard.canActivate(new ActivatedRouteSnapshot());
-    
-    expect(result).toBeTrue();
-  });
-  
-  it('should redirect unauthenticated users to login', () => {
-    mockAuthService.isAuthenticated.and.returnValue(false);
-    
-    const result = guard.canActivate(new ActivatedRouteSnapshot());
-    
-    expect(result).toBeFalse();
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
-  });
-});
-```
-
-## Best Practices
-
-### Routing Do's
-- Use lazy loading for feature modules
-- Implement proper route guards
-- Use resolvers for data loading
-- Leverage child resolvers for nested data
-- Use enhanced scroll options for better UX
-- Implement breadcrumb navigation
-- Test routing components and guards
-
-### Routing Don'ts
-- Don't load all modules upfront
-- Don't forget to handle route errors
-- Don't use complex logic in route guards
-- Don't ignore route parameter validation
-- Don't skip testing navigation logic
-- Don't use hardcoded routes
-- Don't forget to handle route state

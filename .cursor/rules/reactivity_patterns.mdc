@@ -6,9 +6,11 @@ alwaysApply: false
 
 # Angular 20 Reactivity Patterns
 
-Angular 20 stabilizes the Signals API, providing a robust foundation for reactive programming with stable APIs like `effect()`, `toSignal()`, and `linkedSignal()`.
+Angular 20 stabilizes the Signals API. Review `coding_patterns.mdc` for global guidance on using Signals across the application.
 
 ## Core Signal Patterns
+
+> Global rules: `coding_patterns.mdc` (architecture) · `service_patterns.mdc` (state) · `component_patterns.mdc` (exposed Signals)
 
 ### Basic Signal Usage
 ```typescript
@@ -121,6 +123,8 @@ export class EffectService {
 
 ## Signal-Based Component Patterns
 
+> Consulte `component_patterns.mdc` para papéis de smart/dumb components
+
 ### Smart Component with Signals
 ```typescript
 @Component({
@@ -172,6 +176,8 @@ export class UserCardComponent {
 
 ## Signal Interop Patterns
 
+> Integrar com observables conforme diretrizes de interoperabilidade em `coding_patterns.mdc`
+
 ### Converting Observables to Signals
 ```typescript
 @Injectable({ providedIn: 'root' })
@@ -217,6 +223,8 @@ export class ObservableInteropService {
 ```
 
 ## Performance Optimization with Signals
+
+> Use em conjunto com `performance_optimization.mdc`
 
 ### Computed Signal Optimization
 ```typescript

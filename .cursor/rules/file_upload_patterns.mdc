@@ -1,12 +1,12 @@
 ---
-description: Guide for implement File upload patterns, Supabase storage integration, and file handling standards
+description: File upload patterns, Supabase storage integration, and handling standards
 globs:
 alwaysApply: false
 ---
 
 # File Upload Patterns
 
-This document defines patterns for handling file uploads, storage management, and file operations using Supabase Storage.
+Guidelines for uploads integrated with Supabase Storage. Combine with `service_patterns.mdc` for state coordination and `coding_patterns.mdc` for security practices.
 
 ## File Upload Rules
 

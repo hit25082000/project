@@ -158,6 +158,15 @@ export class UserService {
   }
 
   /**
+   * Force refresh of user list data
+   */
+  refresh(): void {
+    // Force refresh by triggering the resource stream again
+    // This will cause the rxResource to re-execute the API call
+    this.listResource.reload();
+  }
+
+  /**
    * Reset all service state
    */
   reset(): void {

@@ -5,7 +5,7 @@ alwaysApply: false
 
 # Naming Conventions
 
-Consistent naming conventions across the entire codebase to maintain readability and developer experience.
+Consistent naming conventions support the organization described in `coding_patterns.mdc` and `directory_structure.mdc`.
 
 ## File Naming
 

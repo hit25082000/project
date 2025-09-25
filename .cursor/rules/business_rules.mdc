@@ -1,39 +1,41 @@
 ---
-description: Core project principles, tech stack, and non-negotiable architectural decisions
+description: Project vision, guiding principles, and non-negotiable decisions
 globs:
 alwaysApply: false
 ---
 
-# Módulo 1: Visão Geral e Princípios do Projeto
+# Project Overview
 
-Esta seção define as bases do projeto, seus objetivos, regras inegociáveis e a stack tecnológica.
+This document captures the product purpose, strategic goals, and decisions that cannot change without team agreement. Global technical rules live in `coding_patterns.mdc`.
 
-## Project: [Name]
+## Project
 
-### Purpose
+- **Name**: [Define here]
+- **Purpose**: One sentence describing the problem solved and the target audience.
 
-A single, clear sentence describing what this software does and for whom.
+## Strategic Goals
 
-### Core Principles
+- Deliver a consistent experience driven by Signals and layered architecture
+- Increase productivity using Angular 20 zoneless and Supabase as managed backend
+- Prioritize extensibility through isolated modules and concise documentation
 
-  * **Architecture**: Signal-Based State Management with a strict separation of concerns (Presentation \> State \> Data).
-  * **Code Style**: Functional-first, immutable data patterns. Asynchronous operations use `async/await` (Promises).
-  * **Reactivity**: The UI is a direct reflection of the state. No manual DOM manipulation or imperative state synchronization. RxJS is not used for state management.
-  * **Backend Communication**: Explicit and isolated within the Data Access (API) Layer.
+## Official Stack
 
-### Tech Stack
+- **Frontend**: Angular 20 (standalone, zoneless)
+- **Language**: TypeScript 5.4+
+- **Backend/DB**: Supabase
+- **Tooling**: Nx 21.5.3, npm
 
-  * **Language**: TypeScript 5.4+
-  * **Framework**: Angular 20+ (Zoneless)
-  * **Backend/DB**: Supabase
-  * **Key Libraries**: None. State management relies on built-in Angular Signals.
+## Non-Negotiable Decisions
 
-### Non-Negotiables
+- Follow global conventions defined in `coding_patterns.mdc`
+- Keep the flow `Component → Service → API`; only APIs talk to `SupabaseClient`
+- Bootstrap without `NgZone`; exceptions require approval from the technical team
+- File, class, and selector names must follow `naming_conventions.mdc`
+- Templates must use Angular control flow (`@if`, `@for`, `@switch`)
 
-  * **No `NgZone`**: The project must be bootstrapped as zoneless.
-  * **No State in Components**: Components reflect state, they do not own business logic state. State is managed in services.
-  * **Services Do Not Access `SupabaseClient`**: Services must use the API layer for all data access.
-  * **Follow Naming Conventions**: All files, classes, and selectors must follow the established naming conventions.
-  * **Use Signal-based Control Flow**: Use `@if`, `@for`, `@switch` in templates. Do not use `*ngIf`, `*ngFor`.
+## Related References
 
------
+- `coding_patterns.mdc` – Architecture and quality guidelines
+- `project_configuration.mdc` – Official Angular/Nx configurations
+- `naming_conventions.mdc` – Naming conventions

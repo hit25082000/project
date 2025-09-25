@@ -1,12 +1,17 @@
 ---
-description: Angular 20 project configuration with simplified angular.json and build optimization
+description: Official configuration with simplified angular.json and build optimization
 globs:
 alwaysApply: false
 ---
 
 # Angular 20 Project Configuration
 
-Angular 20 simplifies the `angular.json` configuration, reducing the need for extensive configurations and improving build performance.
+Official configurations aligned with global guidelines in `coding_patterns.mdc`, decisions in `business_rules.mdc`, and performance patterns in `performance_optimization.mdc`.
+
+### References
+- `coding_patterns.mdc` – Layering, Signals, and quality
+- `business_rules.mdc` – Stack and non-negotiable decisions
+- `performance_optimization.mdc` – Build tuning and monitoring
 
 ## Simplified Angular.json Structure
 

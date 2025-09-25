@@ -1,18 +1,18 @@
 ---
-description: Guide to Import path aliases and module resolution patterns
+description: TypeScript path aliases aligned with the project directory structure
 alwaysApply: false
 ---
 
-### Path Aliases & Imports
+### Path Aliases and Imports
 
-To maintain clean and consistent import paths, use the following TypeScript path aliases.
+Use the following TypeScript path aliases. They mirror the structure described in `directory_structure.mdc` and follow `coding_patterns.mdc`.
 
 ```typescript
-@core/* // app/core/*
+@core/*   // app/core/*
 @shared/* // app/shared/*
 @widget/* // app/widget/*
 @domain/* // app/domain/*
-@env/* // environments/*
+@env/*    // environments/*
 ```
 
 ### Import Examples

@@ -1,0 +1,18 @@
+<div class="user-list">
+  @if (users().length === 0) {
+  <div class="empty-state">
+    <p>No users to display</p>
+  </div>
+  } @else {
+  <div class="user-grid">
+    @for (user of users(); track user.id) {
+    <v-user-card
+      [user]="user"
+      (select)="onUserSelect($event)"
+      (edit)="onUserEdit($event)"
+      (delete)="onUserDelete($event)"
+    />
+    }
+  </div>
+  }
+</div>

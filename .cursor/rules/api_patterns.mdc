@@ -1,10 +1,9 @@
 ---
-description: Complete guide to create APIs 
-globs: ["**/apis/*.api.ts"]
+description: API layer contract for Supabase access and error propagation
 alwaysApply: false
 ---
 
-Complete guide to create APIs. It provides a clean interface for data access and handles all Supabase interactions.
+The API layer is responsible for all communication with Supabase. Review `coding_patterns.mdc` for security and quality principles that also apply here.
 
 ## API Layer Rules
 
@@ -14,9 +13,9 @@ Complete guide to create APIs. It provides a clean interface for data access and
 4. Methods must return a `Promise`
 5. Handle errors consistently and throw meaningful exceptions
 6. Use TypeScript interfaces for request/response types
-7. Implement proper error handling and logging
+7. Implement proper error handling and logging (see `error_handling_patterns.mdc`)
 
-## Example API with patterns
+## Example API
 
 ```typescript
 // establishment.api.ts
@@ -94,10 +93,7 @@ export class EstablishmentApi {
   }
 }
 ```
-### Error Handling for api
-- **Error Handling**: See `error_handling_patterns.md#API Layer Error Handling` 
-
-### Reference Documentation (READ ONLY IF NEEDED)
-- **Detailed Testing Examples**: See `api_testing_reference.md`
-- **Helper Functions**: See `api_testing_reference.md#helper-functions`
-- **Advanced Patterns**: See `api_testing_reference.md#advanced-patterns`
+### Related References
+- `coding_patterns.mdc` – Architecture and security guidelines
+- `error_handling_patterns.mdc#API Layer Error Handling` – Error handling specifics
+- `apis/api_testing_reference.md` – Testing examples, helpers, and advanced patterns

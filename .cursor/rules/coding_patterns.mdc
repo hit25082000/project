@@ -1,12 +1,12 @@
 ---
-description: Coding patterns, naming conventions, and component architecture standards
+description: Global architectural, quality, and security standards for the entire codebase
 globs:
-alwaysApply: true
+alwaysApply: false
 ---
 
 # General Coding Patterns
 
-This file contains general coding patterns and architectural guidelines that apply across all layers of the application.
+This file is the single source of truth for cross-cutting architectural and quality rules. Other rule documents must reference this guide instead of restating its content.
 
 ## Code Organization Principles
 
@@ -25,6 +25,10 @@ Components → Services → APIs → Supabase
 - Avoid manual subscription management
 - Leverage `computed()` for derived state
 - Use `resource()` for async data loading
+
+### Referencing This Guide
+- Component, service, and API pattern files should link back here for shared rules on signals, layering, and security
+- Update this document first whenever a global rule changes, then adjust downstream references
 
 ## Code Quality Standards
 

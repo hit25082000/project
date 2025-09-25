@@ -1,25 +1,27 @@
 ---
-description: Complete guide to create Services his patterns, state management with signals, and business logic organization
+description: Service layer patterns for Signals-based state and business logic
 globs:
 alwaysApply: false
 ---
 
-Services manage application state using Angular Signals and handle all business logic. They act as the bridge between the presentation layer (components) and the data layer (APIs).
+Services manage state with Signals and contain business logic. Review `coding_patterns.mdc` before applying these rules.
 
 ## Service Architecture Rules
 
-1. Inject the corresponding `.api.ts` file. **Never inject `SupabaseClient` directly**
-2. Manage state with signals, using a `resource`-like pattern for async data
-3. Create separate resources for lists (`Preview` data) and selected items (`Details` data)
-4. Expose public signals for components and methods for actions
-5. Handle loading states and error management
-6. Implement optimistic updates where appropriate
+1. Inject only the corresponding API (`*.api.ts`) for data access
+2. Keep state in Signals using `resource()` or `rxResource()` when needed
+3. Separate resources for collections (list/previews) and selected item (details)
+4. Expose only the Signals and actions needed by the component
+5. Consolidate loading and error state in computed Signals
+6. Apply optimistic updates when it matches domain requirements
 
 ## Resource Selection Rules
 
-**Rule 1: Use `rxResource` for Promise-based APIs wrapped with `from()`**
-**Rule 2: Use `resource()` for direct Promise-based APIs**
-**Rule 3: Use `toSignal()` for simple observable conversions**
+**Rule 1:** use `rxResource` when wrapping Promises with `from()`
+
+**Rule 2:** prefer `resource()` for direct async calls
+
+**Rule 3:** use `toSignal()` only for simple observable conversions
 
 ```typescript
 // rxResource pattern (for Promise-based APIs wrapped with from())
@@ -36,8 +38,9 @@ private readonly listResource = resource({
 
 ## Signal Simplification Rules
 
-**Rule 4: Consolidate loading and error signals - use single signals for all resources**
-**Rule 5: Make internal state private, expose only what components need**
+**Rule 4:** consolidate loading/error flags into single `computed()` Signals
+
+**Rule 5:** keep internal state private; expose only what the component consumes
 
 ```typescript
 // ❌ Avoid multiple signals
@@ -142,12 +145,10 @@ export class UserService {
 }
 ```
 
-### Error Handling
-- **Error Handling**: See `error_handling_patterns.md` 
-- **Notifications**: See `notification_patterns`
-
-### Reference Documentation (READ ONLY IF NEEDED)
-- **Detailed Error Handling and Retry**: See `service_error_reference.md` 
-- **Detailed Testing Examples**: See `service_test_reference.md`
-- **Optimistic Patterns**: See `service_optmistic_reference.md`
-- **Cache Patterns**: See `service_cache_reference.md`
+### Related References
+- `coding_patterns.mdc` – Global Signals and layering rules
+- `error_handling_patterns.mdc` – Error handling and retry strategies
+- `notification_patterns.mdc` – User feedback guidelines
+- `services/service_test_reference.md` – Service testing examples
+- `services/service_cache_reference.md` – Cache patterns
+- `services/service_optmistic_reference.md` – Optimistic update strategies

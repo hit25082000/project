@@ -7,7 +7,7 @@ export { UserService } from './services/user.service';
 // User Components
 export { UserListPage } from './components/user-list/user-list.page';
 export { UserListComponent } from './components/user-list/user-list.component';
-export { UserCardComponent } from './components/user-list/user-card.component';
+export { UserCardComponent } from './components/user-card/user-card.component';
 
 // User Interfaces
 export type {

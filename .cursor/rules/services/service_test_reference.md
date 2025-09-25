@@ -1,3 +1,5 @@
+See also `testing_patterns.mdc` for global guidelines.
+
 ## Service Testing Patterns
 
 ### Unit Tests

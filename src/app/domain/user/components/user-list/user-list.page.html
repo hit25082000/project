@@ -1,0 +1,69 @@
+<div class="user-list-page">
+  <!-- Header Section -->
+  <header class="page-header">
+    <h1>Users</h1>
+    <div class="header-actions">
+      <button
+        class="btn btn-primary"
+        (click)="onCreateUser()"
+        [disabled]="isLoading()"
+      >
+        Add User
+      </button>
+    </div>
+  </header>
+
+  <!-- Search Section -->
+  <section class="search-section">
+    <div class="search-container">
+      <input
+        type="text"
+        placeholder="Search users..."
+        [value]="searchTerm()"
+        (input)="onSearch($event)"
+        class="search-input"
+      />
+      @if (searchTerm()) {
+      <button class="btn btn-secondary btn-sm" (click)="onClearSearch()">
+        Clear
+      </button>
+      }
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="page-content">
+    @if (isLoading()) {
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Loading users...</p>
+    </div>
+    } @else if (error()) {
+    <div class="error-container">
+      <h3>Error loading users</h3>
+      <p>{{ error()?.message || 'An unexpected error occurred' }}</p>
+      <button class="btn btn-primary" (click)="onRetry()">Try Again</button>
+    </div>
+    } @else if (users().length === 0) {
+    <div class="empty-container">
+      <h3>No users found</h3>
+      <p>
+        @if (searchTerm()) { No users match your search criteria. } @else {
+        Get started by creating your first user. }
+      </p>
+      @if (!searchTerm()) {
+      <button class="btn btn-primary" (click)="onCreateUser()">
+        Create User
+      </button>
+      }
+    </div>
+    } @else {
+    <v-user-list
+      [users]="users()"
+      (select)="onUserSelect($event)"
+      (edit)="onUserEdit($event)"
+      (delete)="onUserDelete($event)"
+    />
+    }
+  </main>
+</div>

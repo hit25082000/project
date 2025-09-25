@@ -1,3 +1,5 @@
+Complement to `error_handling_patterns.mdc` for service-specific scenarios.
+
 ### Error Handling and Retry Logic
 
 ```typescript

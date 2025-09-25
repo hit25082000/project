@@ -1,38 +1,29 @@
 ---
-description: Complete guide to create components his patterns, smart vs dumb components, and component architecture
+description: Component patterns for smart vs. dumb roles and Angular 20 syntax
 globs:
 alwaysApply: false
 ---
 
-components follow a strict separation between "smart" and "dumb" components to maintain clear responsibilities and improve testability.
-
-This document is the entry point for component rules. Detailed guidance is divided into focused references to keep this file concise and easier to scan.
+Components follow a strict separation between smart page components and dumb reusable components. Review `coding_patterns.mdc` for shared rules.
 
 ## Primary Guides
-- **Component Types** – Smart page components vs. dumb reusable components, including full rules and examples. See `components/component_types_reference.mdc`.
-- **Component Structure** – Template/class organization, extraction rules, and decorator conventions. See `components/component_structure_reference.mdc`.
-- **Dynamic Component Creation** – Patterns for Angular 20 dynamic hosting and factories. See `components/component_dynamic_creation_reference.mdc`.
-- **Component Communication** – Input/output/model patterns for parent-child collaboration. See `components/component_communication_reference.mdc`.
-- **Component Testing** – Expectations for smart vs. dumb component test coverage. See `components/component_testing_reference.mdc`.
+- `components/component_types_reference.mdc` – Component types, responsibilities, and examples
+- `components/component_structure_reference.md` – Template/class organization and extraction rules
+- `components/component_dynamic_creation_reference.md` – Dynamic component patterns in Angular 20
+- `components/component_communication_reference.md` – Parent/child interaction patterns
+- `components/component_testing_reference.md` – Test coverage expectations by component type
 
 ## Quick Rules
-- Separate smart page components from dumb reusable components and keep logic flowing `Component → Service → API`.
-- Inject services in page components only; reusable components must remain presentation-only.
-- Connect service signals directly to templates and forward child outputs back to services.
-- Inline `template` or `styles` blocks must stay at or below five lines; move longer content to dedicated `.html`/`.scss` files referenced via `templateUrl`/`styleUrls`.
-- Use Angular 20 control-flow blocks (`@if`, `@for`, `@switch`) and signals for state.
-- Coordinate naming with `components/component_naming_reference.md` and the broader naming rules.
+- Keep the flow `Component → Service → API`
+- Inject services only in page components; reusable components remain presentation-only
+- Bind service Signals directly to templates and propagate outputs back to the service
+- Limit inline `template`/`styles` to five lines; extract longer content into dedicated files
+- Use declarative control flow (`@if`, `@for`, `@switch`) and Signals for state
+- Align names with `components/component_naming_reference.md` and `naming_conventions.mdc`
 
-## Reference Library
-- `components/component_types_reference.mdc`
-- `components/component_structure_reference.mdc`
-- `components/component_dynamic_creation_reference.mdc`
-- `components/component_communication_reference.mdc`
-- `components/component_testing_reference.mdc`
-- `components/component_naming_reference.md`
-
-### Related Service Guidance
-- **Error Handling**: `service_error_reference.md`
-- **Testing Examples**: `service_test_reference.md`
-- **Optimistic Patterns**: `service_optmistic_reference.md`
-- **Cache Patterns**: `service_cache_reference.md`
+## Related References
+- `coding_patterns.mdc` – Global architecture and Signal rules
+- `services/service_error_reference.md` – Shared error handling guidance
+- `services/service_test_reference.md` – End-to-end testing examples with services
+- `services/service_optmistic_reference.md` – Optimistic update strategies
+- `services/service_cache_reference.md` – Cache and invalidation patterns
