@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { UserPreview } from '../../interfaces/user.interface';
-import { UserListComponent } from './user-list.component';
+import { UserListComponent } from '../../components/user-list/user-list.component';
 
 @Component({
   selector: 'app-user-list',

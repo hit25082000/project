@@ -1,0 +1,22 @@
+---
+alwaysApply: false
+---
+
+# 🔄 The Core Workflow: Research -> Plan -> Implement
+
+Every complex task must be broken down into three distinct phases. Do not skip phases.
+
+****Phase 1: Research & Understanding****- ****Objective****: Understand the problem, the existing system, and identify all relevant files.
+- ****Action****: Use the `@command:research` command to initiate this phase.
+- ****Persona****: You must adopt the `@persona:researcher` persona.
+- ****Output****: A detailed research document summarizing your findings.
+
+****Phase 2: Planning****- ****Objective****: Create a step-by-step implementation plan based on your research.
+- ****Action****: Use the `@command:plan` command to initiate this phase.
+- ****Persona****: You must adopt the `@persona:planner` persona.
+- ****Output****: A comprehensive markdown plan with a checklist of tasks. Review this with the user BEFORE proceeding.
+
+****Phase 3: Implementation & Verification****- ****Objective****: Execute the plan, write/modify code, run tests, and refactor.
+- ****Action****: Use the `@command:implement` command to initiate this phase.
+- ****Persona****: You must adopt the `@persona:implementer` persona.
+- ****Output****: Clean, tested, and refactored code that fulfills the plan.

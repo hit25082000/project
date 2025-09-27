@@ -4,7 +4,7 @@ export const appRoutes: Route[] = [
   {
     path: 'users',
     loadComponent: () =>
-      import('./domain/user/components/user-list/user-list.page').then(
+      import('./domain/user/pages/user-list.page/user-list.page').then(
         (m) => m.UserListPage
       ),
   },

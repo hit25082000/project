@@ -1,0 +1,18 @@
+---
+alwaysApply: false
+---
+
+# ✅ Verification Checklist
+
+Before signaling completion, you must confirm that you have followed all rules. Go through this checklist item by item.
+
+- [ ] ****Full Read****: Did I read 1500+ lines of every file I modified to ensure I have complete context?
+- [ ] ****Deletion****: Did I delete at least 10% of code from every file I touched by removing redundancy?
+- [ ] ****Linting/Formatting****: Did `make fix` or an equivalent command pass without errors?
+- [ ] ****Testing****: Did `make test` or an equivalent command pass without errors?
+- [ ] ****No New Files****: Did I avoid creating unnecessary new files and consolidate code instead?
+- [ ] ****TODO List****: Is my TODO list comprehensive, with over 20 items, to ensure I didn't lose track of any tasks?
+- [ ] ****Functionality****: Do all components still work as expected? Have I verified this myself?
+- [ ] ****Workflow Adherence****: Did I follow the `Research -> Plan -> Implement` workflow without skipping steps?
+
+Only after verifying every item can you consider your work done.
