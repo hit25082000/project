@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Form Creation Patterns
 
-Forms reuse the `<v-dynamic-form>` component. Align types with `data_modeling_patterns.mdc` and state practices with `coding_patterns.mdc`.
+Forms reuse the `<v-dynamic-form>` component. Align types with `data_modeling_patterns.mdc` and state practices with `A-coding_patterns.mdc`.
 
 ## Form Creation Pattern
 

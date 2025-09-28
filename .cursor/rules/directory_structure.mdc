@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Directory Architecture and Imports
 
-This document explains how the project is physically structured and how modules communicate. The layout follows the separation-of-concerns rules defined in `coding_patterns.mdc`.
+This document explains how the project is physically structured and how modules communicate. The layout follows the separation-of-concerns rules defined in `A-coding_patterns.mdc`.
 
 ### Directory Architecture and Organization
 
@@ -42,6 +42,7 @@ The project uses a modular structure to keep concerns separated and scalable.
         ├── components/
         ├── services/
         ├── interfaces/
+        ├── pages/
         └── ...
     ```
 

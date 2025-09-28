@@ -3,21 +3,21 @@
 This guide helps you navigate the rule set without loading additional context into Cursor. Use it as a quick index; when you need full details, open the referenced `.mdc` files inside `.cursor/rules`.
 
 ## Core Foundations
-- `coding_patterns.mdc` – Single source for architecture, Signals, quality, security
-- `business_rules.mdc` – Product vision, tech stack, and non-negotiable decisions
+- `A-coding_patterns.mdc` – Single source for architecture, Signals, quality, security
+- `B-business_rules.mdc` – Product vision, tech stack, and non-negotiable decisions
 
 ## Layer & Domain Guides
 - Components
-  - `component_patterns.mdc` – Smart vs. dumb roles, quick rules
+  - `C-component_patterns.mdc` – Smart vs. dumb roles, quick rules
   - `template_syntax.mdc` – Angular 20 control flow and operators
 - Services
-  - `service_patterns.mdc` – State orchestration, resources, actions
+  - `C-service_patterns.mdc` – State orchestration, resources, actions
   - `reactivity_patterns.mdc` – Signals, effects, interop
 - APIs
-  - `api_patterns.mdc` – Supabase access, error propagation
+  - `C-api_patterns.mdc` – Supabase access, error propagation
 - Data & Forms
   - `data_modeling_patterns.mdc` – Interfaces, utility types, naming
-  - `form_creation_patterns.mdc` – Dynamic form configs with Signals
+  - `form_patterns.mdc` – Dynamic form configs with Signals
 - Cross-cutting Concerns
   - `error_handling_patterns.mdc` & `notification_patterns.mdc` – Feedback and recovery
   - `file_upload_patterns.mdc` – Supabase Storage integration
@@ -40,6 +40,6 @@ Located in `.cursor/rules/services/`:
 - `service_test_reference.md` – Exemplos de testes com Signals
 
 ## Usage Tips
-1. Consulte sempre `coding_patterns.mdc` primeiro; ele dita as decisões globais.
+1. Consulte sempre `A-coding_patterns.mdc` primeiro; ele dita as decisões globais.
 2. Use os guias específicos apenas para regras exclusivas daquela camada.
 3. Recursos `.md` fora de `.cursor/rules` (como este README) não entram automaticamente no contexto do Cursor, evitando custo adicional.

@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Documentation Patterns
 
-Documentation standards aligned with architecture rules in `coding_patterns.mdc` and naming rules in `naming_conventions.mdc`.
+Documentation standards aligned with architecture rules in `A-coding_patterns.mdc` and naming rules in `naming_conventions.mdc`.
 
 ## Core Principles
 

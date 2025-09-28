@@ -4,7 +4,7 @@ globs:
 alwaysApply: false
 ---
 
-Components follow a strict separation between smart page components and dumb reusable components. Review `coding_patterns.mdc` for shared rules.
+Components follow a strict separation between smart page components and dumb reusable components. Review `A-coding_patterns.mdc` for shared rules.
 
 ## Primary Guides
 - `components/component_types_reference.mdc` – Component types, responsibilities, and examples
@@ -22,7 +22,7 @@ Components follow a strict separation between smart page components and dumb reu
 - Align names with `components/component_naming_reference.md` and `naming_conventions.mdc`
 
 ## Related References
-- `coding_patterns.mdc` – Global architecture and Signal rules
+- `A-coding_patterns.mdc` – Global architecture and Signal rules
 - `services/service_error_reference.md` – Shared error handling guidance
 - `services/service_test_reference.md` – End-to-end testing examples with services
 - `services/service_optmistic_reference.md` – Optimistic update strategies

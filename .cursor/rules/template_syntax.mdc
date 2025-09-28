@@ -4,11 +4,11 @@ globs:
 alwaysApply: false
 ---
 
-Template syntax in Angular 20. Align these patterns with Signal and performance practices in `coding_patterns.mdc` and `reactivity_patterns.mdc`.
+Template syntax in Angular 20. Align these patterns with Signal and performance practices in `A-coding_patterns.mdc` and `reactivity_patterns.mdc`.
 
 ## New Template Operators (Angular 20)
 
-> Reactivity rules: `reactivity_patterns.mdc` · Global conventions: `coding_patterns.mdc`
+> Reactivity rules: `reactivity_patterns.mdc` · Global conventions: `A-coding_patterns.mdc`
 
 ### Exponentiation Operator
 ```html
@@ -59,7 +59,7 @@ Template syntax in Angular 20. Align these patterns with Signal and performance 
 
 ## Enhanced Control Flow
 
-> Lembre-se das responsabilidades de componentes em `component_patterns.mdc`
+> Lembre-se das responsabilidades de componentes em `C-component_patterns.mdc`
 
 ### Advanced @if Conditions
 ```html
@@ -170,7 +170,7 @@ Template syntax in Angular 20. Align these patterns with Signal and performance 
 
 ## Custom Template Functions
 
-> Validar uso com `service_patterns.mdc` quando depender de estado
+> Validar uso com `C-service_patterns.mdc` quando depender de estado
 
 ### Math Functions
 ```typescript

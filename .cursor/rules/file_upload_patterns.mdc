@@ -6,7 +6,7 @@ alwaysApply: false
 
 # File Upload Patterns
 
-Guidelines for uploads integrated with Supabase Storage. Combine with `service_patterns.mdc` for state coordination and `coding_patterns.mdc` for security practices.
+Guidelines for uploads integrated with Supabase Storage. Combine with `C-service_patterns.mdc` for state coordination and `A-coding_patterns.mdc` for security practices.
 
 ## File Upload Rules
 

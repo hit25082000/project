@@ -4,11 +4,11 @@ globs:
 alwaysApply: false
 ---
 
-Angular 20 routing patterns. Review `coding_patterns.mdc` for global principles and `template_syntax.mdc` for control-flow usage in pages.
+Angular 20 routing patterns. Review `A-coding_patterns.mdc` for global principles and `template_syntax.mdc` for control-flow usage in pages.
 
 ## Enhanced Scroll Options
 
-> See `component_patterns.mdc` for navigation within page components
+> See `C-component_patterns.mdc` for navigation within page components
 
 ### ViewportScroller with Options
 ```typescript
@@ -82,7 +82,7 @@ export class ScrollablePageComponent {
 
 ## Child Resolvers with Parent Data Access
 
-> Maintain shared data via services as per `service_patterns.mdc`
+> Maintain shared data via services as per `C-service_patterns.mdc`
 
 ### Parent Route with Resolver
 ```typescript

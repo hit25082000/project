@@ -5,7 +5,7 @@ alwaysApply: false
 
 # Naming Conventions
 
-Consistent naming conventions support the organization described in `coding_patterns.mdc` and `directory_structure.mdc`.
+Consistent naming conventions support the organization described in `A-coding_patterns.mdc` and `directory_structure.mdc`.
 
 ## File Naming
 

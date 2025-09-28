@@ -1,4 +1,4 @@
-Use together with `service_patterns.mdc` to keep state and user feedback consistent.
+Use together with `C-service_patterns.mdc` to keep state and user feedback consistent.
 
 ## Advanced Service Patterns
 

@@ -5,7 +5,7 @@ alwaysApply: false
 
 ### Path Aliases and Imports
 
-Use the following TypeScript path aliases. They mirror the structure described in `directory_structure.mdc` and follow `coding_patterns.mdc`.
+Use the following TypeScript path aliases. They mirror the structure described in `directory_structure.mdc` and follow `A-coding_patterns.mdc`.
 
 ```typescript
 @core/*   // app/core/*

@@ -6,7 +6,7 @@ alwaysApply: false
 
 ## Data Modeling Patterns
 
-Modeling follows the conventions defined in `coding_patterns.mdc`. This guide complements those rules with concrete examples.
+Modeling follows the conventions defined in `A-coding_patterns.mdc`. This guide complements those rules with concrete examples.
 
 ## Core Modeling Rules
 
@@ -120,14 +120,14 @@ export type iEstablishmentDetailsResponse = iApiResponse<iEstablishmentDetails>;
 ```
 
 ### Referências
-- `coding_patterns.mdc` – Global type conventions
+- `A-coding_patterns.mdc` – Global type conventions
 - `form_creation_patterns.mdc` – Form integration
 - `template_syntax.mdc` – Template usage
 
 ## Related Entity Models
 
 ### Referências
-- `coding_patterns.mdc` – Convenções globais
+- `A-coding_patterns.mdc` – Convenções globais
 - `form_creation_patterns.mdc` – Integração com formulários
 
 ```typescript

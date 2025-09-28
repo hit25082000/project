@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Notification Patterns
 
-Use the NotificationService as an extension of the flows described in `coding_patterns.mdc`, `service_patterns.mdc`, and `error_handling_patterns.mdc`.
+Use the NotificationService as an extension of the flows described in `A-coding_patterns.mdc`, `C-service_patterns.mdc`, and `error_handling_patterns.mdc`.
 
 ## Notification Service Rules
 
@@ -15,7 +15,7 @@ Use the NotificationService as an extension of the flows described in `coding_pa
 **Rule 3: Keep notifications concise—message only, avoid complex titles**
 
 ### References
-- `service_patterns.mdc` – State orchestration and actions
+- `C-service_patterns.mdc` – State orchestration and actions
 - `error_handling_patterns.mdc` – Error handling before user feedback
 
 ## Usage Patterns

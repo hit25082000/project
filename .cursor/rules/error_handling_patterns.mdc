@@ -1,8 +1,8 @@
-Complete guide to error handling patterns and integration with the `GlobalErrorHandler`. Reference `coding_patterns.mdc` for global principles and `notification_patterns.mdc` for user feedback rules.
+Complete guide to error handling patterns and integration with the `GlobalErrorHandler`. Reference `A-coding_patterns.mdc` for global principles and `notification_patterns.mdc` for user feedback rules.
 
 ## Global Error Handling Architecture
 
-> Layer application: `service_patterns.mdc` and `api_patterns.mdc`
+> Layer application: `C-service_patterns.mdc` and `C-api_patterns.mdc`
 
 The application uses a centralized error handling system with the `GlobalErrorHandler` service that provides consistent error management across all layers.
 
@@ -345,8 +345,8 @@ async fetchWithRetry<T>(operation: () => Promise<T>): Promise<T> {
 ```
 
 ### Referências
-- `api_patterns.mdc` – Padrões de tratamento na camada de dados
-- `service_patterns.mdc` – Propagação de erros e integração com estado
+- `C-api_patterns.mdc` – Padrões de tratamento na camada de dados
+- `C-service_patterns.mdc` – Propagação de erros e integração com estado
 - `notification_patterns.mdc` – Mensagens ao usuário
 
 ## Best Practices

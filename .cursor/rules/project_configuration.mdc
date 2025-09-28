@@ -6,11 +6,11 @@ alwaysApply: false
 
 # Angular 20 Project Configuration
 
-Official configurations aligned with global guidelines in `coding_patterns.mdc`, decisions in `business_rules.mdc`, and performance patterns in `performance_optimization.mdc`.
+Official configurations aligned with global guidelines in `A-coding_patterns.mdc`, decisions in `B-business_rules.mdc`, and performance patterns in `performance_optimization.mdc`.
 
 ### References
-- `coding_patterns.mdc` – Layering, Signals, and quality
-- `business_rules.mdc` – Stack and non-negotiable decisions
+- `A-coding_patterns.mdc` – Layering, Signals, and quality
+- `B-business_rules.mdc` – Stack and non-negotiable decisions
 - `performance_optimization.mdc` – Build tuning and monitoring
 
 ## Simplified Angular.json Structure

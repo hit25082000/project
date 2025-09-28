@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Project Overview
 
-This document captures the product purpose, strategic goals, and decisions that cannot change without team agreement. Global technical rules live in `coding_patterns.mdc`.
+This document captures the product purpose, strategic goals, and decisions that cannot change without team agreement. Global technical rules live in `A-coding_patterns.mdc`.
 
 ## Project
 
@@ -28,7 +28,7 @@ This document captures the product purpose, strategic goals, and decisions that 
 
 ## Non-Negotiable Decisions
 
-- Follow global conventions defined in `coding_patterns.mdc`
+- Follow global conventions defined in `A-coding_patterns.mdc`
 - Keep the flow `Component → Service → API`; only APIs talk to `SupabaseClient`
 - Bootstrap without `NgZone`; exceptions require approval from the technical team
 - File, class, and selector names must follow `naming_conventions.mdc`
@@ -36,6 +36,6 @@ This document captures the product purpose, strategic goals, and decisions that 
 
 ## Related References
 
-- `coding_patterns.mdc` – Architecture and quality guidelines
+- `A-coding_patterns.mdc` – Architecture and quality guidelines
 - `project_configuration.mdc` – Official Angular/Nx configurations
 - `naming_conventions.mdc` – Naming conventions

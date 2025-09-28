@@ -6,10 +6,10 @@ alwaysApply: false
 
 # Performance Optimization Patterns
 
-Apply these techniques together with `coding_patterns.mdc` (OnPush/Signals) and `reactivity_patterns.mdc`.
+Apply these techniques together with `A-coding_patterns.mdc` (OnPush/Signals) and `reactivity_patterns.mdc`.
 
 ### References
-- `coding_patterns.mdc` – Global guidelines
+- `A-coding_patterns.mdc` – Global guidelines
 - `reactivity_patterns.mdc` – Advanced Signal usage
 - `template_syntax.mdc` – Template optimization
 

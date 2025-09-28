@@ -1,0 +1,17 @@
+---
+description: Creating or editing rules 
+alwaysApply: false
+---
+
+# the rules system is designed with some principals
+
+1. Fundamentos: `@A-A-coding_patterns.mdc` (arquitetura, qualidade, segurança).
+2. Decisões do produto: `@B-B-business_rules.mdc`, apenas com contexto e restrições globais ligadas ao negócio.
+3. Padrões por camada: `@C-C-api_patterns.mdc`, `@C-C-service_patterns.mdc`, `@C-C-component_patterns.mdc` contendo somente regras exclusivas; cada um começa com “Antes de usar, leia [Fundamentos]”.
+4. Para padrão por camada a regra principal deve ter os exemplos esperados e regras essenciais, exemplo: `@C-service_patterns.mdc` deve conter os exemplos ruins e o resultado resperado com regras de como criar os serviços, mas somente com informações essenciais, claras e objetivas sem redundancia para informações complementares ou avançadas deve ser criado um arquivo mardown na pasta privada da camada.
+5. Para cada camada existe uma pasta exclusiva com regras avançadas especificas: pastas apis/, services/, components/ com referências longas; transforme-as em anexos consultivos (titule e categorize, por exemplo “Testes”, “Cache”, “Comunicação”).
+6. Para Error Handling existe uma regra centralizada `@error_handling_patterns.mdc` que ter todas informações de erros em seções e um sumario inicial com linha para que o agente saiba o que precisa ler.
+7. As regras devem ser claras e objetivas sem redundancia.
+8. As regras devem mostrar um exemplo completo do resultado final esperado.
+9. Regras de exemplo de codigo devem ja ter tratamento de erros e padrões globais não sendo necessaria a consulta de outros padrões sempre.
+    

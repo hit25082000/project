@@ -1,0 +1,277 @@
+---
+description: Service layer patterns for Signals-based state and business logic
+globs:
+alwaysApply: false
+---
+
+Services manage state with Signals and contain business logic. Review `A-coding_patterns.mdc` before applying these rules.
+
+## Core Service Principles
+
+### Separation of Concerns
+- **Business Logic Only**: Services contain business logic, NOT data access or presentation logic
+- **Single Responsibility**: Each service handles one domain area with clear boundaries
+- **Layer Isolation**: Keep API calls in APIs, UI logic in components, business rules in services
+
+### Service Architecture Rules
+
+1. **Inject corresponding API only** for data access (no direct Supabase calls)
+2. **Use Signals for state** with `resource()` or `rxResource()` when needed
+3. **Separate resources** for collections (list/previews) and selected item (details)
+4. **Expose minimal interface** - only Signals and actions components need
+5. **Consolidate state signals** - combine loading/error states in computed Signals
+6. **Apply optimistic updates** when domain requirements allow
+
+## Resource Selection Rules
+
+**Rule 1:** use `rxResource` when wrapping Promises with `from()`
+
+**Rule 2:** prefer `resource()` for direct async calls
+
+**Rule 3:** use `toSignal()` only for simple observable conversions
+
+```typescript
+import { UserPreview } from '../interfaces/user.interface';
+import { ApiError } from '../../shared/utils/errors';
+
+// rxResource pattern (for Promise-based APIs wrapped with from())
+private readonly listResource = rxResource<UserPreview[], ApiError>({
+  stream: () => from(this.api.getUsers(this.searchTerm())),
+});
+
+// resource() pattern (for direct Promise-based APIs)
+private readonly listResource = resource<UserPreview[], { search: string }, ApiError>({
+  request: () => ({ search: this.searchTerm() }),
+  loader: ({ search }) => this.api.getUsers(search),
+});
+```
+
+## Signal Simplification Rules
+
+**Rule 4:** consolidate loading/error flags into single `computed()` Signals
+
+**Rule 5:** keep internal state private; expose only what the component consumes
+
+```typescript
+import { UserPreview, User } from '../interfaces/user.interface';
+import { ApiError } from '../../shared/utils/errors';
+
+// ❌ Avoid multiple signals and unknown types
+readonly isLoading = computed(() => this.listResource.isLoading());
+readonly isDetailsLoading = computed(() => this.detailsResource.isLoading());
+readonly error = computed(() => this.listResource.error()); // unknown type
+readonly detailsError = computed(() => this.detailsResource.error()); // unknown type
+readonly users = computed(() => this.listResource.value() || []); // unknown[] type
+
+// ✅ Use consolidated signals with proper error typing
+readonly isLoading = computed<boolean>(
+  () => this.listResource.isLoading() || this.detailsResource.isLoading()
+);
+readonly error = computed<ApiError | null>(
+  () => this.listResource.error() ?? this.detailsResource.error() ?? null
+);
+readonly users = computed<UserPreview[]>(() => this.listResource.value() ?? []);
+readonly selectedUser = computed<User | undefined>(() => this.detailsResource.value());
+
+// ✅ Private internal state with proper typing
+private readonly selectedId = signal<string | null>(null);
+readonly searchTerm = signal<string>(''); // Public for external control
+```
+
+## Service Pattern
+
+```typescript
+import { User, UserPreview, UserCreate, UserUpdate } from '../interfaces/user.interface';
+import { ApiError, NotFoundError, ValidationError, NetworkError } from '../../shared/utils/errors';
+
+@Injectable({ providedIn: 'root' })
+export class UserService {
+  // Dependencies
+  private api = inject(UserApi);
+  private errorHandler = inject(GlobalErrorHandler);
+  private notificationService = inject(NotificationService);
+
+  // State management
+  private readonly selectedId = signal<string | null>(null);
+  readonly searchTerm = signal<string>('');
+
+  // Resources with proper error typing
+  private readonly listResource = rxResource<UserPreview[], ApiError>({
+    stream: () => from(this.api.getUsers(this.searchTerm())),
+  });
+
+  private readonly detailsResource = rxResource<User | undefined, ApiError>({
+    stream: () => {
+      const id = this.selectedId();
+      return id ? from(this.api.getUserById(id)) : from(Promise.resolve(undefined));
+    },
+  });
+
+  // Public signals - consolidated with proper typing
+  readonly users = computed<UserPreview[]>(() => this.listResource.value() ?? []);
+  readonly selectedUser = computed<User | undefined>(() => this.detailsResource.value());
+  readonly isLoading = computed<boolean>(
+    () => this.listResource.isLoading() || this.detailsResource.isLoading()
+  );
+  readonly error = computed<ApiError | null>(
+    () => this.listResource.error() ?? this.detailsResource.error() ?? null
+  );
+
+  // Actions
+  selectById(id: string): void {
+    this.selectedId.set(id);
+  }
+
+  search(term: string): void {
+    this.searchTerm.set(term);
+  }
+
+  async createUser(user: UserCreate): Promise<User> {
+    try {
+      const newUser = await this.api.createUser(user);
+      this.notificationService.success('User created successfully');
+      // Refresh the user list to include the new user
+      this.listResource.reload();
+      return newUser;
+    } catch (error) {
+      this.errorHandler.handleError(error, 'Creating user');
+      throw error;
+    }
+  }
+
+  async updateUser(id: string, user: UserUpdate): Promise<User> {
+    try {
+      const updatedUser = await this.api.updateUser(id, user);
+      this.notificationService.success('User updated successfully');
+      // Refresh both list and details if the selected user was updated
+      this.listResource.reload();
+      if (this.selectedId() === id) {
+        this.detailsResource.reload();
+      }
+      return updatedUser;
+    } catch (error) {
+      this.errorHandler.handleError(error, 'Updating user');
+      throw error;
+    }
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    try {
+      await this.api.deleteUser(id);
+      this.notificationService.success('User deleted successfully');
+
+      // Clear selection if the deleted user was selected
+      if (this.selectedId() === id) {
+        this.selectedId.set(null);
+      }
+      // Refresh the user list
+      this.listResource.reload();
+    } catch (error) {
+      this.errorHandler.handleError(error, 'Deleting user');
+      throw error;
+    }
+  }
+}
+```
+
+## Validation Patterns
+
+**Rule 7:** Implement modular validation logic separated from business operations
+
+**Rule 8:** Use ValidationError for validation failures
+
+```typescript
+// Validation pattern
+validateCreation(data: CreateType): ValidationResult {
+  const errors: string[] = [];
+
+  if (!data.name?.trim()) errors.push('Name is required');
+  if (!this.isValidEmail(data.email)) errors.push('Invalid email');
+
+  return { isValid: errors.length === 0, errors };
+}
+
+async createItem(data: CreateType): Promise<ItemType> {
+  const validation = this.validateCreation(data);
+  if (!validation.isValid) {
+    throw new ValidationError(validation.errors.join(', '));
+  }
+
+  const item = await this.api.create(data);
+  this.listResource.reload();
+  return item;
+}
+```
+
+## Error Handling in Services
+
+**Rule 9:** Always import and use specific error types from `error_handling_patterns.mdc`
+
+**Rule 10:** Type error signals as `ApiError | null` instead of `unknown`
+
+**Rule 11:** Reference `error_handling_patterns.mdc` for detailed error handling patterns
+
+## Type Safety Rules
+
+**Rule 12:** Always import and use proper types from the domain's `interfaces/` folder
+
+**Rule 13:** Use generic type parameters on `rxResource` and `resource` for proper typing
+
+**Rule 14:** Use `??` (nullish coalescing) instead of `||` for default values to distinguish between `null/undefined` and falsy values
+
+**Rule 15:** Explicitly type all computed signals to ensure type safety
+
+## Service Best Practices
+
+### Industry Standard Patterns
+
+**✅ Separation of Concerns**
+- Keep business logic isolated from data access and presentation layers
+- Use clear interfaces between service layers
+- Maintain single responsibility per service
+
+**✅ Resource Management**
+- Always cleanup resources in `finally` blocks
+- Implement proper error recovery for failed operations
+- Handle transactions for multi-step business operations
+
+**✅ Validation & Error Handling**
+- Implement modular, extensible validation logic
+- Provide meaningful, user-friendly error messages
+- Use centralized error handling to avoid code duplication
+- Handle specific error types appropriately (graceful vs throwing)
+
+**✅ Maintainability**
+- Keep services focused and uncluttered
+- Use consistent patterns across domains
+- Document complex business logic clearly
+
+```typescript
+// ❌ Avoid unknown types - always specify proper interface types
+readonly users = computed(() => this.listResource.value() || []); // implicit unknown[]
+
+// ✅ Use proper types from interfaces folder
+import { UserPreview } from '../interfaces/user.interface';
+readonly users = computed<UserPreview[]>(() => this.listResource.value() ?? []);
+```
+
+## Quick Reference
+
+### Service Checklist
+- [ ] Injects only corresponding API
+- [ ] Uses proper types from interfaces/
+- [ ] Has consolidated state signals
+- [ ] Implements proper error handling
+- [ ] Includes validation logic
+- [ ] Manages resources correctly
+- [ ] Follows single responsibility principle
+
+### Related References
+- `A-coding_patterns.mdc` – Global Signals and layering rules
+- `error_handling_patterns.mdc` – Error types, handling patterns, and GlobalErrorHandler usage
+- `notification_patterns.mdc` – User feedback guidelines
+- `data_modeling_patterns.mdc` – Interface definitions and type safety
+- `services/service_transaction_reference.md` – Advanced transaction and resource management patterns
+- `services/service_test_reference.md` – Service testing examples
+- `services/service_cache_reference.md` – Cache patterns
+- `services/service_optmistic_reference.md` – Optimistic update strategies
