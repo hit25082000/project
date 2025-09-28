@@ -9,6 +9,13 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'monetization',
+    loadChildren: () =>
+      import('./domain/monetization/monetization.routes').then(
+        (m) => m.monetizationRoutes
+      ),
+  },
+  {
     path: '',
     redirectTo: '/users',
     pathMatch: 'full',

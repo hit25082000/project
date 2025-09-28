@@ -1,0 +1,56 @@
+<div class="billing-history">
+  <div class="header">
+    <h3>Billing History</h3>
+    <button
+      class="refresh-btn"
+      (click)="refreshHistory()"
+      [disabled]="isLoading()"
+      title="Refresh billing history"
+    >
+      ↻
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading">
+      <p>Loading billing history...</p>
+    </div>
+  } @else if (billingHistory().length === 0) {
+    <div class="empty-state">
+      <p>No billing history found</p>
+      <p>Your payment history will appear here</p>
+    </div>
+  } @else {
+    <div class="history-list">
+      @for (item of billingHistory(); track item.id) {
+        <div class="history-item">
+          <div class="item-header">
+            <div class="item-info">
+              <span class="amount">{{ formatAmount(item.amount, item.currency) }}</span>
+              <span class="description">{{ item.description || 'Payment' }}</span>
+            </div>
+            <div class="item-meta">
+              <span class="status" [class]="getStatusColor(item.status)">
+                {{ item.status | titlecase }}
+              </span>
+              <span class="date">{{ formatDate(item.createdAt) }}</span>
+            </div>
+          </div>
+
+          @if (item.stripeInvoiceId) {
+            <div class="item-details">
+              <small>Invoice: {{ item.stripeInvoiceId }}</small>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (totalItems() > billingHistory().length) {
+      <div class="load-more">
+        <p>Showing {{ billingHistory().length }} of {{ totalItems() }} transactions</p>
+        <button class="load-more-btn">Load More</button>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,53 @@
+<div class="subscription-upgrade">
+  <h3>Change Your Plan</h3>
+
+  @if (currentSubscription(); as currentSub) {
+    <div class="current-plan">
+      <h4>Current Plan</h4>
+      <div class="plan-card current">
+        <span class="plan-name">{{ currentSub.plan.name }}</span>
+        <span class="plan-price">${{ currentSub.plan.amount / 100 }}/{{ currentSub.plan.interval }}</span>
+      </div>
+    </div>
+  }
+
+  <div class="available-plans">
+    <h4>Available Plans</h4>
+
+    @for (plan of plans(); track plan.id) {
+      <div class="plan-card" [class.upgrade]="isUpgrade(plan)" [class.downgrade]="isDowngrade(plan)">
+        <div class="plan-info">
+          <span class="plan-name">{{ plan.name }}</span>
+          <span class="plan-price">${{ plan.amount / 100 }}/{{ plan.interval }}</span>
+          @if (isUpgrade(plan)) {
+            <span class="change-type upgrade">Upgrade</span>
+          } @else if (isDowngrade(plan)) {
+            <span class="change-type downgrade">Downgrade</span>
+          }
+        </div>
+
+        <div class="plan-actions">
+          @if (isUpgrade(plan)) {
+            <button
+              class="action-btn upgrade"
+              (click)="upgradeToPlan(plan.id)"
+              [disabled]="isLoading()"
+            >
+              Upgrade Now
+            </button>
+          } @else if (isDowngrade(plan)) {
+            <button
+              class="action-btn downgrade"
+              (click)="downgradeToPlan(plan.id)"
+              [disabled]="isLoading()"
+            >
+              Schedule Downgrade
+            </button>
+          } @else {
+            <span class="current-indicator">Current Plan</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

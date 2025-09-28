@@ -1,0 +1,55 @@
+<div class="plan-selector">
+  <h3>Choose Your Plan</h3>
+
+  @if (isLoading()) {
+    <div class="loading">
+      <p>Loading plans...</p>
+    </div>
+  } @else {
+    <div class="plans-grid">
+      @for (plan of plans(); track plan.id) {
+        <div
+          class="plan-card"
+          [class.selected]="isSelected(plan.id)"
+          (click)="selectPlan(plan.id)"
+          role="button"
+          tabindex="0"
+          (keydown.enter)="selectPlan(plan.id)"
+          (keydown.space)="selectPlan(plan.id)"
+        >
+          <div class="plan-header">
+            <h4>{{ plan.name }}</h4>
+            @if (isSelected(plan.id)) {
+              <span class="selected-indicator">✓</span>
+            }
+          </div>
+
+          <div class="plan-price">
+            <span class="amount">${{ plan.amount / 100 }}</span>
+            <span class="interval">/{{ plan.interval }}</span>
+          </div>
+
+          <p class="plan-description">{{ plan.description }}</p>
+
+          <ul class="plan-features">
+            @for (feature of plan.features; track feature) {
+              <li>{{ feature }}</li>
+            }
+          </ul>
+
+          <button
+            class="select-btn"
+            [disabled]="isProcessing()"
+            (click)="subscribe(); $event.stopPropagation()"
+          >
+            @if (isProcessing() && isSelected(plan.id)) {
+              <span>Processing...</span>
+            } @else {
+              <span>{{ isSelected(plan.id) ? 'Subscribe Now' : 'Select Plan' }}</span>
+            }
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>
