@@ -4,6 +4,8 @@ alwaysApply: false
 
 # 🔄 Enhanced Workflow: Research → Plan → Implement → Verify → Document
 
+Every complex task must be broken down into three distinct phases. Do not skip phases.
+
 ## Phase 1: Research & Understanding
 - **Command**: `@command:research`
 - **Persona**: `@persona:researcher`
@@ -13,14 +15,16 @@ alwaysApply: false
   - Key patterns identified
   - Required rules references
 
+Users must aprove the plan after planner create and before any code implement.
+
 ## Phase 2: Planning & Task Creation
 - **Command**: `@command:plan`
 - **Persona**: `@persona:planner`
 - **Output**: Task files in `@docs/[feature-name]/` with:
   ```markdown
   ## Task: [01-descriptive-name.md]
-  ### Status: [ ]
-  
+  ### Status: [ ]  
+
   ### Context
   - **Files to modify**: `path/to/file.ts`
   - **Rules to follow**: @rule:C-service_patterns#resource-selection
