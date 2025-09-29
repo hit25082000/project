@@ -1,0 +1,74 @@
+---
+description: Essential configuration only
+alwaysApply: false
+---
+
+# Minimal Configuration
+
+## Angular 20 Setup
+
+```typescript
+// main.ts - Zoneless mode
+import { bootstrapApplication } from '@angular/platform-browser';
+import { provideExperimentalZonelessChangeDetection } from '@angular/core';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideExperimentalZonelessChangeDetection(),
+    provideRouter(routes),
+    provideHttpClient()
+  ]
+});
+```
+
+## TypeScript Paths
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@core/*": ["src/app/core/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@widget/*": ["src/app/widget/*"],
+      "@domain/*": ["src/app/domain/*"]
+    }
+  }
+}
+```
+
+## Environment Pattern
+
+```typescript
+export const environment = {
+  production: false,
+  supabaseUrl: process.env['SUPABASE_URL'],
+  supabaseKey: process.env['SUPABASE_ANON_KEY']
+};
+```
+
+## Essential Scripts
+
+```json
+{
+  "scripts": {
+    "start": "ng serve",
+    "build": "ng build --configuration production",
+    "test": "ng test",
+    "lint": "ng lint --fix"
+  }
+}
+```
+
+## Performance Budgets
+
+```json
+{
+  "budgets": [
+    { "type": "initial", "maximumError": "1mb" },
+    { "type": "anyComponentStyle", "maximumError": "4kb" }
+  ]
+}
+```
+
+**Full configs**: See Angular CLI docs for complete angular.json

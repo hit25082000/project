@@ -1,29 +1,123 @@
 ---
-description: Component patterns for smart vs. dumb roles and Angular 20 syntax
+description: Component patterns - UI, forms, routing, templates
 globs:
 alwaysApply: false
 ---
 
-Components follow a strict separation between smart page components and dumb reusable components. Review `A-coding_patterns.mdc` for shared rules.
+# Component Patterns
 
-## Primary Guides
-- `components/component_types_reference.mdc` – Component types, responsibilities, and examples
-- `components/component_structure_reference.md` – Template/class organization and extraction rules
-- `components/component_dynamic_creation_reference.md` – Dynamic component patterns in Angular 20
-- `components/component_communication_reference.md` – Parent/child interaction patterns
-- `components/component_testing_reference.md` – Test coverage expectations by component type
+**Prerequisites**: @A-coding_patterns
 
-## Quick Rules
-- Keep the flow `Component → Service → API`
-- Inject services only in page components; reusable components remain presentation-only
-- Bind service Signals directly to templates and propagate outputs back to the service
-- Limit inline `template`/`styles` to five lines; extract longer content into dedicated files
-- Use declarative control flow (`@if`, `@for`, `@switch`) and Signals for state
-- Align names with `components/component_naming_reference.md` and `naming_conventions.mdc`
+## Complete Pattern (Page Component)
 
-## Related References
-- `A-coding_patterns.mdc` – Global architecture and Signal rules
-- `services/service_error_reference.md` – Shared error handling guidance
-- `services/service_test_reference.md` – End-to-end testing examples with services
-- `services/service_optmistic_reference.md` – Optimistic update strategies
-- `services/service_cache_reference.md` – Cache and invalidation patterns
+```typescript
+@Component({
+  selector: 'app-user-list',
+  template: `
+    <div class="user-list-page">
+      <!-- Loading/Error states -->
+      @if (isLoading()) {
+        <v-loading />
+      } @else if (error()) {
+        <v-error [error]="error()" />
+      }
+      
+      <!-- Search -->
+      <input [(ngModel)]="searchTerm" (ngModelChange)="search($event)">
+      
+      <!-- List with new operators -->
+      @for (user of users(); track user.id) {
+        @if ('active' in user && user.active) {
+          <v-user-card 
+            [user]="user" 
+            (select)="selectUser($event)"
+          />
+        }
+      }
+      
+      <!-- Power calculation example -->
+      <p>Total users: {{ users().length ** 2 }} squared</p>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class UserListPage {
+  private userService = inject(UserService);
+  
+  // Direct signal binding
+  users = this.userService.users;
+  isLoading = this.userService.isLoading;
+  error = this.userService.error;
+  searchTerm = model('');
+  
+  search(term: string): void {
+    this.userService.search(term);
+  }
+  
+  selectUser(id: string): void {
+    this.userService.selectById(id);
+  }
+}
+```
+
+## Component Types
+
+| Type | Responsibilities | Can Inject |
+|------|-----------------|------------|
+| Page | Orchestrates, binds to services | Services only |
+| Reusable | Display, emit events | Nothing |
+
+## Forms {#forms}
+
+```typescript
+// Form config in constant file
+export const USER_FORM_CONFIG = (): iDynamicFormConfig[] => [
+  {
+    label: 'Email',
+    name: 'email',
+    type: { field: eDynamicField.INPUT },
+    validations: [Validators.required, Validators.email]
+  }
+];
+
+// Usage in component
+<v-dynamic-form 
+  [config]="formConfig" 
+  (formSubmit)="onSubmit($event)"
+/>
+```
+
+## Routing {#routing}
+
+```typescript
+// Navigate with service
+navigateToUser(id: string): void {
+  this.router.navigate(['/users', id]);
+}
+
+// Smooth scroll
+scrollToSection(id: string): void {
+  this.viewportScroller.scrollToAnchor(id, { behavior: 'smooth' });
+}
+```
+
+## Template Syntax {#template}
+
+```html
+<!-- Angular 20: New operators -->
+{{ base ** exponent }}              <!-- Power -->
+{{ 'property' in object }}          <!-- Property check -->
+
+<!-- Control flow -->
+@if (condition) { }
+@for (item of items(); track item.id) { }
+@switch (value()) { @case ('a') { } }
+```
+
+## Component Checklist
+- [ ] Page components inject services only
+- [ ] Reusable components use input/output only
+- [ ] Uses OnPush change detection
+- [ ] Templates use new control flow
+- [ ] Forms use dynamic config pattern
+- [ ] Errors handled via @error_handling_patterns#component-errors

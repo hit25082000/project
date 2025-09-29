@@ -1,17 +1,130 @@
 ---
-description: Creating or editing rules 
+description: Creating and maintaining rules
 alwaysApply: false
 ---
 
-# the rules system is designed with some principals
+# Rule System Design
 
-1. Fundamentos: `@A-A-coding_patterns.mdc` (arquitetura, qualidade, segurança).
-2. Decisões do produto: `@B-B-business_rules.mdc`, apenas com contexto e restrições globais ligadas ao negócio.
-3. Padrões por camada: `@C-C-api_patterns.mdc`, `@C-C-service_patterns.mdc`, `@C-C-component_patterns.mdc` contendo somente regras exclusivas; cada um começa com “Antes de usar, leia [Fundamentos]”.
-4. Para padrão por camada a regra principal deve ter os exemplos esperados e regras essenciais, exemplo: `@C-service_patterns.mdc` deve conter os exemplos ruins e o resultado resperado com regras de como criar os serviços, mas somente com informações essenciais, claras e objetivas sem redundancia para informações complementares ou avançadas deve ser criado um arquivo mardown na pasta privada da camada.
-5. Para cada camada existe uma pasta exclusiva com regras avançadas especificas: pastas apis/, services/, components/ com referências longas; transforme-as em anexos consultivos (titule e categorize, por exemplo “Testes”, “Cache”, “Comunicação”).
-6. Para Error Handling existe uma regra centralizada `@error_handling_patterns.mdc` que ter todas informações de erros em seções e um sumario inicial com linha para que o agente saiba o que precisa ler.
-7. As regras devem ser claras e objetivas sem redundancia.
-8. As regras devem mostrar um exemplo completo do resultado final esperado.
-9. Regras de exemplo de codigo devem ja ter tratamento de erros e padrões globais não sendo necessaria a consulta de outros padrões sempre.
-    
+## Hierarchy (3 Levels Only)
+
+```
+A-Level: Foundation (1 file, <100 lines)
+├── Architecture, Signals, separation of concerns
+
+B-Level: Business (1 file, <50 lines)  
+├── Stack decisions, constraints
+
+C-Level: Implementation (3 files, <150 lines each)
+├── API patterns (Supabase access)
+├── Service patterns (state, business logic)
+├── Component patterns (UI, templates)
+```
+
+## Centralization Strategy
+
+### What to Centralize
+```
+error_handling_patterns.mdc    → All error types/handling
+testing_patterns.mdc           → Test strategies all layers
+data_modeling_patterns.mdc     → Types/interfaces only
+```
+
+### What to Keep in Layers
+- Layer-specific examples WITH error handling included
+- Reference central files via anchors: `@error_handling_patterns#service-errors`
+
+## Rule File Template
+
+```markdown
+---
+description: [One line description]
+---
+
+# [Layer] Patterns
+
+**Prerequisites**: @A-coding_patterns
+
+## Complete Example (Copy-Paste Ready)
+[ONE working example with error handling]
+
+## Rules (5-10 bullets max)
+- Rule with impact
+- Reference: @error_handling_patterns#[section]
+
+## Checklist
+- [ ] Item to verify
+```
+
+## Task File Template (Planner Output)
+
+```markdown
+## Task: [01-feature-name.md]
+### Status: [ ]
+
+### Implementation
+**File**: `src/app/domain/user/services/user.service.ts`  
+**Pattern**: @C-service_patterns#resource-pattern
+**Errors**: @error_handling_patterns#service-errors
+
+### Copy This Code
+```typescript
+private readonly listResource = rxResource<User[], ApiError>({
+  stream: () => from(this.api.getUsers())
+});
+```
+
+### Delete These Lines
+- Line 45-67: Remove subscribe() calls
+- Line 89: Delete unused import
+
+### Test Command
+```bash
+npm test user.service.spec.ts
+```
+```
+
+## AGENT Documentation Keywords
+
+Add these prefixes for AI navigation:
+- `AGENT-TODO:` pending work
+- `AGENT-RULE:` apply this pattern
+- `AGENT-DELETE:` remove this code
+- `AGENT-TEST:` verification command
+
+## Rule Quality Metrics
+
+| Metric | Target |
+|--------|--------|
+| File size | <150 lines |
+| Read time | <2 minutes |
+| Examples | 1 complete |
+| References | Use anchors |
+| Redundancy | Zero |
+
+## Decision: Error Handling Approach
+
+**✅ CENTRALIZED WITH ANCHORS**
+
+1. All error types in `error_handling_patterns.mdc`
+2. Each layer shows usage in main example
+3. Reference details: `@error_handling_patterns#api-errors`
+4. Result: 40% less content, single source of truth
+
+## Files to Remove
+
+Delete these redundant files:
+- `documentation_patterns.mdc` (merge AGENT-* here)
+- `form_patterns.mdc` (move to components)
+- `notification_patterns.mdc` (move to services)
+- `performance_optimization.mdc` (keep only critical parts)
+- `project_configuration.mdc` (use minimal_config.mdc)
+- `reactivity_patterns.mdc` (already in services)
+- `routing_patterns.mdc` (incomplete, move to components)
+- `template_syntax.mdc` (move key parts to components)
+
+## Maintenance Rules
+
+1. **Before creating**: Check if it exists elsewhere
+2. **Before adding**: Can this line be deleted?
+3. **Before duplicating**: Can I reference with anchor?
+4. **After writing**: Read in 2 minutes or reduce

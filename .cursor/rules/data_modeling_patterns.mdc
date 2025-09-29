@@ -1,437 +1,62 @@
 ---
-description: Data modeling conventions, TypeScript interfaces, and derived types
-globs:
+description: TypeScript interfaces and type patterns
 alwaysApply: false
 ---
 
-## Data Modeling Patterns
+# Data Modeling Patterns
 
-Modeling follows the conventions defined in `A-coding_patterns.mdc`. This guide complements those rules with concrete examples.
-
-## Core Modeling Rules
-
-1. Start with a complete interface that represents the domain entity
-2. Derive variations with `Pick`, `Omit`, `Partial`, or feature-specific helpers
-3. Follow naming conventions described in `naming_conventions.mdc`
-4. Document complex types with JSDoc when needed
-5. Use enums for finite value sets
-6. Provide helper types for forms and validation
-
-## Basic Model Pattern
+## Quick Pattern
 
 ```typescript
-// establishment.model.ts
-
-// Base entity interface
+// 1. Base interface (complete entity)
 export interface iEstablishment {
   id: string;
   name: string;
   description: string;
-  address: iAddress;
   category: eEstablishmentCategory;
   status: eEstablishmentStatus;
   ownerId: string;
   createdAt: string;
   updatedAt: string;
-  reviews: iReview[];
-  images: string[];
-  metadata: iEstablishmentMetadata;
 }
 
-// Type variations for different use cases
-export type iEstablishmentPreview = Pick<iEstablishment, 'id' | 'name' | 'description' | 'category'>;
+// 2. Derive variations
+export type iEstablishmentPreview = Pick<iEstablishment, 'id' | 'name' | 'description'>;
+export type iEstablishmentCreate = Omit<iEstablishment, 'id' | 'createdAt' | 'updatedAt'>;
+export type iEstablishmentUpdate = Partial<Pick<iEstablishment, 'name' | 'description'>>;
 
-export type iEstablishmentDetails = iEstablishment;
-
-export type iEstablishmentCreate = Omit<iEstablishment, 'id' | 'createdAt' | 'updatedAt' | 'reviews'>;
-
-export type iEstablishmentUpdate = Partial<Pick<iEstablishment, 'name' | 'description' | 'category' | 'status'>>;
-
-export type iEstablishmentForm = Omit<iEstablishment, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'ownerId'>;
-```
-
-## Enum Definitions
-
-```typescript
-// establishment.enum.ts
+// 3. Enums for finite sets
 export enum eEstablishmentCategory {
   RESTAURANT = 'restaurant',
   HOTEL = 'hotel',
-  SHOP = 'shop',
-  ENTERTAINMENT = 'entertainment',
-  SERVICE = 'service'
+  SHOP = 'shop'
 }
 
-export enum eEstablishmentStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  PENDING = 'pending',
-  SUSPENDED = 'suspended'
-}
-
-export enum eReviewStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected'
-}
-```
-
-## Advanced Type Patterns
-
-### Utility Types for Forms
-```typescript
-// Generic form types
-export type iFormData<T> = {
-  [K in keyof T]: T[K] extends string ? string | null : T[K];
-};
-
-export type iFormErrors<T> = {
-  [K in keyof T]?: string;
-};
-
-// Specific form types
-export type iEstablishmentFormData = iFormData<iEstablishmentForm>;
-export type iEstablishmentFormErrors = iFormErrors<iEstablishmentForm>;
-```
-
-### API Response Types
-```typescript
-// Generic API response wrapper
+// 4. Generic wrappers
 export interface iApiResponse<T> {
   data: T;
-  message?: string;
-  timestamp: string;
+  error?: ApiError;
 }
 
-// Pagination wrapper
 export interface iPaginatedResponse<T> {
   data: T[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    totalItems: number;
-    totalPages: number;
-  };
+  pagination: { page: number; total: number; }
 }
-
-// Specific response types
-export type iEstablishmentListResponse = iPaginatedResponse<iEstablishmentPreview>;
-export type iEstablishmentDetailsResponse = iApiResponse<iEstablishmentDetails>;
 ```
 
-### Referências
-- `A-coding_patterns.mdc` – Global type conventions
-- `form_creation_patterns.mdc` – Form integration
-- `template_syntax.mdc` – Template usage
-
-## Related Entity Models
-
-### Referências
-- `A-coding_patterns.mdc` – Convenções globais
-- `form_creation_patterns.mdc` – Integração com formulários
+## Validation Types {#validation}
 
 ```typescript
-// address.model.ts
-export interface iAddress {
-  id: string;
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  coordinates: iCoordinates;
+export interface iValidationResult {
+  isValid: boolean;
+  errors: string[];
 }
 
-export interface iCoordinates {
-  latitude: number;
-  longitude: number;
-}
-
-// review.model.ts
-export interface iReview {
-  id: string;
-  establishmentId: string;
-  userId: string;
-  rating: number;
-  comment: string;
-  status: eReviewStatus;
-  createdAt: string;
-  user: iUserPreview;
-}
-
-// user.model.ts
-export interface iUser {
-  id: string;
-  email: string;
-  name: string;
-  avatarUrl?: string;
-  role: eUserRole;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type iUserPreview = Pick<iUser, 'id' | 'name' | 'avatarUrl'>;
-
-export enum eUserRole {
-  ADMIN = 'admin',
-  OWNER = 'owner',
-  CUSTOMER = 'customer'
-}
+// Use in services: @C-service_patterns#validation
 ```
 
-## Advanced Type Patterns
-
-### Utility Types for Forms
-```typescript
-// Generic form types
-export type iFormData<T> = {
-  [K in keyof T]: T[K] extends string ? string | null : T[K];
-};
-
-export type iFormErrors<T> = {
-  [K in keyof T]?: string;
-};
-
-// Specific form types
-export type iEstablishmentFormData = iFormData<iEstablishmentForm>;
-export type iEstablishmentFormErrors = iFormErrors<iEstablishmentForm>;
-```
-
-### API Response Types
-```typescript
-// Generic API response wrapper
-export interface iApiResponse<T> {
-  data: T;
-  message?: string;
-  timestamp: string;
-}
-
-// Pagination wrapper
-export interface iPaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    totalItems: number;
-    totalPages: number;
-  };
-}
-
-// Specific response types
-export type iEstablishmentListResponse = iPaginatedResponse<iEstablishmentPreview>;
-export type iEstablishmentDetailsResponse = iApiResponse<iEstablishmentDetails>;
-```
-
-### Union and Discriminated Union Types
-```typescript
-// Notification types
-export interface iBaseNotification {
-  id: string;
-  type: eNotificationType;
-  message: string;
-  timestamp: string;
-  read: boolean;
-}
-
-export interface iSuccessNotification extends iBaseNotification {
-  type: eNotificationType.SUCCESS;
-  action?: string;
-}
-
-export interface iErrorNotification extends iBaseNotification {
-  type: eNotificationType.ERROR;
-  errorCode?: string;
-  details?: string;
-}
-
-export interface iInfoNotification extends iBaseNotification {
-  type: eNotificationType.INFO;
-  link?: string;
-}
-
-export type iNotification = iSuccessNotification | iErrorNotification | iInfoNotification;
-
-export enum eNotificationType {
-  SUCCESS = 'success',
-  ERROR = 'error',
-  INFO = 'info',
-  WARNING = 'warning'
-}
-```
-
-### Complex Nested Types
-```typescript
-// Establishment with computed properties
-export interface iEstablishmentWithStats extends iEstablishment {
-  stats: {
-    averageRating: number;
-    totalReviews: number;
-    totalReservations: number;
-    activeReservations: number;
-    revenue: number;
-  };
-  availability: {
-    isOpen: boolean;
-    nextOpening: string | null;
-    hours: iBusinessHours;
-  };
-}
-
-export interface iBusinessHours {
-  monday: iDayHours;
-  tuesday: iDayHours;
-  wednesday: iDayHours;
-  thursday: iDayHours;
-  friday: iDayHours;
-  saturday: iDayHours;
-  sunday: iDayHours;
-}
-
-export interface iDayHours {
-  isOpen: boolean;
-  openTime?: string;
-  closeTime?: string;
-}
-```
-
-### Validation and Constraint Types
-```typescript
-// Form validation types
-export interface iValidationRule<T> {
-  required?: boolean;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: RegExp;
-  custom?: (value: T) => string | null;
-}
-
-export interface iFieldValidation<T> {
-  [K in keyof T]?: iValidationRule<T[K]>;
-}
-
-// Establishment validation
-export const ESTABLISHMENT_VALIDATION: iFieldValidation<iEstablishmentForm> = {
-  name: {
-    required: true,
-    minLength: 2,
-    maxLength: 100
-  },
-  description: {
-    required: true,
-    minLength: 10,
-    maxLength: 1000
-  },
-  category: {
-    required: true
-  }
-};
-```
-
-## Model Naming Conventions
-
-### File Naming
-- Model files: `[feature].model.ts`
-  - `establishment.model.ts`
-  - `user.model.ts`
-  - `review.model.ts`
-
-### Interface Naming
-- Base interfaces: `i[Feature]`
-  - `iEstablishment`, `iUser`, `iReview`
-- Type variations: `i[Feature][Purpose]`
-  - `iEstablishmentPreview`, `iEstablishmentCreate`, `iEstablishmentUpdate`
-- Form types: `i[Feature]Form`
-  - `iEstablishmentForm`, `iUserForm`
-
-### Enum Naming
-- Enums: `e[Feature][Property]`
-  - `eEstablishmentCategory`, `eUserRole`, `eNotificationType`
-
-### Utility Type Naming
-- Generic utilities: `i[Purpose]<T>`
-  - `iFormData<T>`, `iApiResponse<T>`, `iPaginatedResponse<T>`
-
-## Model Documentation Standards
-
-```typescript
-/**
- * Represents an establishment in the system
- * @interface iEstablishment
- */
-export interface iEstablishment {
-  /** Unique identifier for the establishment */
-  id: string;
-  
-  /** Display name of the establishment */
-  name: string;
-  
-  /** Detailed description of the establishment */
-  description: string;
-  
-  /** Physical address of the establishment */
-  address: iAddress;
-  
-  /** Category classification of the establishment */
-  category: eEstablishmentCategory;
-  
-  /** Current operational status */
-  status: eEstablishmentStatus;
-  
-  /** ID of the user who owns this establishment */
-  ownerId: string;
-  
-  /** ISO timestamp when the establishment was created */
-  createdAt: string;
-  
-  /** ISO timestamp when the establishment was last updated */
-  updatedAt: string;
-  
-  /** Array of reviews for this establishment */
-  reviews: iReview[];
-  
-  /** Array of image URLs */
-  images: string[];
-  
-  /** Additional metadata for the establishment */
-  metadata: iEstablishmentMetadata;
-}
-```
-
-## Model Testing Patterns
-
-```typescript
-describe('Establishment Models', () => {
-  it('should create valid establishment preview from full model', () => {
-    const fullEstablishment: iEstablishment = {
-      id: '1',
-      name: 'Test Restaurant',
-      description: 'A test restaurant',
-      // ... other properties
-    };
-    
-    const preview: iEstablishmentPreview = {
-      id: fullEstablishment.id,
-      name: fullEstablishment.name,
-      description: fullEstablishment.description,
-      category: fullEstablishment.category
-    };
-    
-    expect(preview).toBeDefined();
-    expect(preview.id).toBe('1');
-    expect(preview.name).toBe('Test Restaurant');
-  });
-  
-  it('should create valid establishment create object', () => {
-    const createData: iEstablishmentCreate = {
-      name: 'New Restaurant',
-      description: 'A new restaurant',
-      category: eEstablishmentCategory.RESTAURANT,
-      // ... other required properties
-    };
-    
-    expect(createData).toBeDefined();
-    expect(createData.id).toBeUndefined(); // Should not have id
-    expect(createData.createdAt).toBeUndefined(); // Should not have timestamps
-  });
-});
-```
+## Naming Rules
+- Interfaces: `i[Feature]` (iUser, iProduct)
+- Type variations: `i[Feature][Purpose]` (iUserCreate)
+- Enums: `e[Feature][Property]` (eUserRole)
+- Files: `[feature].model.ts`

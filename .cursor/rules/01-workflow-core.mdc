@@ -2,21 +2,67 @@
 alwaysApply: false
 ---
 
-# 🔄 The Core Workflow: Research -> Plan -> Implement
+# 🔄 Enhanced Workflow: Research → Plan → Implement → Verify → Document
 
-Every complex task must be broken down into three distinct phases. Do not skip phases.
+## Phase 1: Research & Understanding
+- **Command**: `@command:research`
+- **Persona**: `@persona:researcher`
+- **Output**: Research document with:
+  - Problem summary
+  - Relevant files list
+  - Key patterns identified
+  - Required rules references
 
-****Phase 1: Research & Understanding****- ****Objective****: Understand the problem, the existing system, and identify all relevant files.
-- ****Action****: Use the `@command:research` command to initiate this phase.
-- ****Persona****: You must adopt the `@persona:researcher` persona.
-- ****Output****: A detailed research document summarizing your findings.
+## Phase 2: Planning & Task Creation
+- **Command**: `@command:plan`
+- **Persona**: `@persona:planner`
+- **Output**: Task files in `@docs/[feature-name]/` with:
+  ```markdown
+  ## Task: [01-descriptive-name.md]
+  ### Status: [ ]
+  
+  ### Context
+  - **Files to modify**: `path/to/file.ts`
+  - **Rules to follow**: @rule:C-service_patterns#resource-selection
+  - **Error handling**: @error_handling_patterns#service-errors
+  
+  ### Implementation Guide
+  1. Read full file (1500+ lines)
+  2. Apply pattern X from @rule:Y
+  3. Delete 10% redundancy
+  
+  ### Verification
+  - [ ] Tests pass: `npm test [specific-test]`
+  - [ ] No new files created
+  - [ ] Error handling follows @error_handling_patterns
+  ```
 
-****Phase 2: Planning****- ****Objective****: Create a step-by-step implementation plan based on your research.
-- ****Action****: Use the `@command:plan` command to initiate this phase.
-- ****Persona****: You must adopt the `@persona:planner` persona.
-- ****Output****: A comprehensive markdown plan with a checklist of tasks. Review this with the user BEFORE proceeding.
+## Phase 3: Implementation
+- **Command**: `@command:implement [task-file]`
+- **Persona**: `@persona:implementer`
+- **Actions**:
+  1. Execute ONE task file at a time
+  2. Mark task [X] when complete
+  3. Run verification steps
 
-****Phase 3: Implementation & Verification****- ****Objective****: Execute the plan, write/modify code, run tests, and refactor.
-- ****Action****: Use the `@command:implement` command to initiate this phase.
-- ****Persona****: You must adopt the `@persona:implementer` persona.
-- ****Output****: Clean, tested, and refactored code that fulfills the plan.
+## Phase 4: Verification
+- **Command**: `@command:verify`
+- **Persona**: `@persona:verifier`
+- **Checklist**: Automated verification against @rule:05-verification-checklist
+
+## Phase 5: Documentation
+- **Command**: `@command:document`
+- **Persona**: `@persona:documenter`
+- **Output**: Update relevant docs with AGENT-* annotations
+
+## Additional Commands
+
+### Quick Commands
+- `@command:refactor [file]` - Apply 10% deletion rule
+- `@command:test [component]` - Generate/run tests
+- `@command:optimize` - Apply performance patterns
+
+### Analysis Commands
+- `@command:analyze-deps` - Check circular dependencies
+- `@command:analyze-size` - Find bloat candidates
+- `@command:analyze-patterns` - Verify rule compliance
