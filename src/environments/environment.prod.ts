@@ -9,8 +9,4 @@ export const environment = {
   STRIPE_PRODUCT_IDS: [],
   STRIPE_PRICE_IDS: [],
   apiUrl: 'https://your-api-domain.com/api',
-  project_name: 'Your Project Name',
-  email: 'contact@example.com',
-  phone: '+1 (555) 123-4567',
-  address: '123 Main St, City, State 12345',
 };
