@@ -23,4 +23,4 @@ export {
   ApiError,
   NotFoundError,
   ValidationError,
-} from '@core/errors/global-error-handler';
+} from '@shared/errors/global-error-handler';

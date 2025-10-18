@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { from } from 'rxjs';
 import { UserApi } from '../apis/user.api';
-import { GlobalErrorHandler } from '@core/errors/global-error-handler';
+import { GlobalErrorHandler } from '@shared/errors/global-error-handler';
 import { NotificationService } from '@shared/services/notification.service';
 import {
   User,

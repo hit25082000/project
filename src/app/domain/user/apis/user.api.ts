@@ -12,7 +12,7 @@ import {
   NotFoundError,
   ValidationError,
   GlobalErrorHandler,
-} from '@core/errors/global-error-handler';
+} from '@shared/errors/global-error-handler';
 
 @Injectable({ providedIn: 'root' })
 export class UserApi {
