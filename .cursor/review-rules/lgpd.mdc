@@ -1,0 +1,423 @@
+---
+description: LGPD (Lei Geral de Proteção de Dados) Review Checklist
+reviewType: lgpd
+---
+
+# LGPD (Lei Geral de Proteção de Dados) Review Rules
+
+This file provides specific criteria for reviewing code against LGPD compliance requirements. LGPD is Brazil's data protection law (Law 13.709/2018).
+
+## Review Checklist
+
+### 1. Data Minimization (Minimização de Dados)
+
+**What to Check:**
+- [ ] Only necessary personal data is collected
+- [ ] No excessive data fields in forms or database entities
+- [ ] Data collection justified by legitimate purpose
+- [ ] Optional vs required fields properly distinguished
+
+**Common Violations:**
+- Collecting more data than needed for the stated purpose
+- Required fields that aren't essential for the service
+- Storing full documents when only specific data is needed
+- Keeping sensitive data (CPF, RG) when identifiers could be anonymized
+
+**Severity**: Medium to High (depends on data sensitivity)
+
+**Examples:**
+```csharp
+// ❌ BAD: Collecting unnecessary data
+public class ContribuinteViewModel
+{
+    [Required] public string CPF { get; set; }
+    [Required] public string RG { get; set; }
+    [Required] public string NomeMae { get; set; } // Unnecessary for debt collection
+    [Required] public string EstadoCivil { get; set; } // Unnecessary
+}
+
+// ✅ GOOD: Only necessary data
+public class ContribuinteViewModel
+{
+    [Required] public string CPF { get; set; } // Required for identification
+    public string Nome { get; set; }
+    public string Email { get; set; }
+    public string Telefone { get; set; }
+    // Only collecting what's needed for debt management
+}
+```
+
+---
+
+### 2. Purpose Limitation (Finalidade Específica)
+
+**What to Check:**
+- [ ] Data used only for declared purposes
+- [ ] No repurposing of data without new consent
+- [ ] Clear business justification for data access
+- [ ] Logging/audit trail for data access
+
+**Common Violations:**
+- Using debt collection data for marketing
+- Sharing citizen data across different government systems without legal basis
+- Accessing data beyond job function requirements
+- Using historical data for purposes other than originally intended
+
+**Severity**: Critical
+
+**Examples:**
+```csharp
+// ❌ BAD: Using data beyond original purpose
+public void EnviarEmailMarketing()
+{
+    var contribuintes = _repository.GetAll(); // Debt collection data
+    foreach (var c in contribuintes)
+    {
+        _emailService.Send(c.Email, "Promoção XYZ"); // Marketing use!
+    }
+}
+
+// ✅ GOOD: Using data only for declared purpose
+public void EnviarNotificacaoCobranca(int cdaId)
+{
+    var cda = _repository.GetById(cdaId);
+    var template = "Notificação de Débito #{0}";
+    _emailService.Send(cda.Email, string.Format(template, cdaId));
+}
+```
+
+---
+
+### 3. Data Security (Segurança dos Dados)
+
+**What to Check:**
+- [ ] Sensitive data encrypted at rest and in transit
+- [ ] No plain text passwords or sensitive data in logs
+- [ ] Proper authentication and authorization
+- [ ] SQL injection prevention (parameterized queries)
+- [ ] XSS prevention in views
+- [ ] Secure data transmission (HTTPS)
+
+**Common Violations:**
+- Logging personal data (CPF, email, phone) in application logs
+- Storing passwords in plain text
+- SQL queries vulnerable to injection
+- Displaying sensitive data in URLs or query strings
+- Unencrypted database fields for sensitive data
+- Missing authorization checks before displaying personal data
+
+**Severity**: Critical
+
+**Examples:**
+```csharp
+// ❌ BAD: Logging sensitive data
+_logger.Info($"Contribuinte {contribuinte.Nome} - CPF: {contribuinte.CPF}"); // CPF in logs!
+
+// ✅ GOOD: Logging without sensitive data
+_logger.Info($"Contribuinte ID: {contribuinte.Id} - operação realizada");
+
+// ❌ BAD: SQL Injection vulnerability
+var query = $"SELECT * FROM Contribuinte WHERE CPF = '{cpf}'";
+
+// ✅ GOOD: Parameterized query
+var contribuinte = _context.Contribuintes.FirstOrDefault(c => c.CPF == cpf);
+```
+
+---
+
+### 4. Data Subject Rights (Direitos do Titular)
+
+**What to Check:**
+- [ ] Ability to access personal data (portability)
+- [ ] Ability to correct incorrect data
+- [ ] Ability to delete data (right to be forgotten) when legally permissible
+- [ ] Mechanism to revoke consent
+- [ ] Clear data retention policies
+
+**Common Violations:**
+- No self-service portal for data access
+- Hard delete without considering legal retention requirements
+- No audit trail when data is modified or deleted
+- Ignoring deletion requests without legal justification
+
+**Severity**: High
+
+**Examples:**
+```csharp
+// ❌ BAD: Hard delete without validation
+public void DeletarContribuinte(int id)
+{
+    var contribuinte = _repository.GetById(id);
+    _repository.Delete(contribuinte); // No retention check!
+}
+
+// ✅ GOOD: Soft delete with retention validation
+public void SolicitarExclusaoContribuinte(int id)
+{
+    var contribuinte = _repository.GetById(id);
+    
+    // Check legal retention requirements (e.g., active debt, legal proceedings)
+    if (contribuinte.PossuiDividaAtiva)
+        throw new LGPDException("Não é possível excluir dados enquanto houver dívida ativa");
+    
+    // Soft delete with audit
+    contribuinte.DataExclusaoSolicitada = DateTime.Now;
+    contribuinte.Ativo = false;
+    _auditService.Log("Exclusão solicitada", contribuinte.Id);
+    _repository.Update(contribuinte);
+}
+```
+
+---
+
+### 5. Consent Management (Gestão de Consentimento)
+
+**What to Check:**
+- [ ] Clear consent mechanisms for optional data processing
+- [ ] Consent stored with timestamp and purpose
+- [ ] Easy withdrawal of consent
+- [ ] No pre-checked consent boxes
+- [ ] Granular consent options (not all-or-nothing)
+
+**Common Violations:**
+- Implicit consent without explicit user action
+- No record of when/how consent was obtained
+- Making service conditional on consent for non-essential processing
+- No mechanism to withdraw consent
+
+**Severity**: High
+
+**Examples:**
+```csharp
+// ❌ BAD: No consent tracking
+public void CadastrarContribuinte(ContribuinteViewModel model)
+{
+    var contribuinte = new Contribuinte
+    {
+        Email = model.Email,
+        AceitaEmailMarketing = true // Assumed consent!
+    };
+}
+
+// ✅ GOOD: Explicit consent with tracking
+public class ConsentimentoContribuinte
+{
+    public int Id { get; set; }
+    public int ContribuinteId { get; set; }
+    public string Finalidade { get; set; } // e.g., "EMAIL_COBRANCA", "SMS_NOTIFICACAO"
+    public bool Concedido { get; set; }
+    public DateTime DataConsentimento { get; set; }
+    public DateTime? DataRevogacao { get; set; }
+    public string CanalConsentimento { get; set; } // "WEB", "APP", "PRESENCIAL"
+}
+```
+
+---
+
+### 6. Data Retention (Retenção de Dados)
+
+**What to Check:**
+- [ ] Clear retention periods defined
+- [ ] Automatic purging of data after retention period
+- [ ] Legal requirements for retention considered
+- [ ] No indefinite storage without justification
+
+**Common Violations:**
+- Keeping personal data indefinitely
+- No automated cleanup processes
+- Retaining data "just in case" without legal basis
+- Not distinguishing between operational and archived data
+
+**Severity**: Medium
+
+**Examples:**
+```csharp
+// ❌ BAD: No retention policy
+public void ArquivarCDA(int cdaId)
+{
+    var cda = _repository.GetById(cdaId);
+    cda.Status = StatusCDA.Arquivada;
+    _repository.Update(cda);
+    // Data kept forever!
+}
+
+// ✅ GOOD: Retention policy with purge
+public void ArquivarCDA(int cdaId)
+{
+    var cda = _repository.GetById(cdaId);
+    cda.Status = StatusCDA.Arquivada;
+    cda.DataArquivamento = DateTime.Now;
+    cda.DataPrevistaExpurgo = DateTime.Now.AddYears(5); // Legal retention period
+    _repository.Update(cda);
+    
+    // Schedule automatic purge after retention period
+    _jobScheduler.SchedulePurge(cda.Id, cda.DataPrevistaExpurgo);
+}
+```
+
+---
+
+### 7. Data Anonymization (Anonimização)
+
+**What to Check:**
+- [ ] Personal identifiers removed from analytics/reports
+- [ ] Aggregated data instead of individual records when possible
+- [ ] Pseudonymization for testing/development environments
+- [ ] No production data in development/test databases
+
+**Common Violations:**
+- Using real CPF/names in development environment
+- Detailed reports with identifiable information
+- Analytics tracking individual users unnecessarily
+- Exporting personal data for training purposes
+
+**Severity**: High
+
+**Examples:**
+```csharp
+// ❌ BAD: Identifiable data in reports
+public RelatorioViewModel GerarRelatorioInadimplencia()
+{
+    var contribuintes = _repository.GetInadimplentes();
+    return new RelatorioViewModel
+    {
+        Contribuintes = contribuintes.Select(c => new {
+            c.Nome,     // Identifiable!
+            c.CPF,      // Identifiable!
+            c.Endereco, // Identifiable!
+            c.ValorDevido
+        })
+    };
+}
+
+// ✅ GOOD: Anonymized aggregated data
+public RelatorioViewModel GerarRelatorioInadimplencia()
+{
+    return new RelatorioViewModel
+    {
+        TotalInadimplentes = _repository.CountInadimplentes(),
+        ValorTotalDevido = _repository.SumValorDevido(),
+        PorFaixaValor = _repository.GroupByFaixaValor(),
+        PorRegiao = _repository.GroupByRegiao() // Geographic, not individual
+    };
+}
+```
+
+---
+
+### 8. Third-Party Data Sharing (Compartilhamento com Terceiros)
+
+**What to Check:**
+- [ ] Legal basis for data sharing (consent, legal obligation, etc.)
+- [ ] Data Processing Agreements with third parties
+- [ ] Minimal data shared (only what's necessary)
+- [ ] Logging of data sharing events
+
+**Common Violations:**
+- Sharing data with external services without legal basis
+- No contracts governing data processing
+- Sending entire database records when only specific fields are needed
+- No audit trail of data sharing
+
+**Severity**: Critical
+
+**Examples:**
+```csharp
+// ❌ BAD: Oversharing data
+public void EnviarParaProtesto(int cdaId)
+{
+    var cda = _repository.GetByIdIncludeAll(cdaId);
+    _protestoService.Send(cda); // Sending entire object with all personal data!
+}
+
+// ✅ GOOD: Minimal data sharing with audit
+public void EnviarParaProtesto(int cdaId)
+{
+    var cda = _repository.GetById(cdaId);
+    var dadosProtesto = new ProtestoDTO
+    {
+        CDAId = cda.Id,
+        CPF_CNPJ = cda.CPF_CNPJ, // Only necessary fields
+        ValorDevido = cda.ValorAtualizado,
+        DataVencimento = cda.DataVencimento
+        // NOT sending: address, phone, email, etc.
+    };
+    
+    _protestoService.Send(dadosProtesto);
+    _auditService.Log("Dados enviados para protesto", cdaId, "PROTESTO_SERVICE");
+}
+```
+
+---
+
+## Context: Dívida Ativa System
+
+### Legal Basis for Processing
+The Dívida Ativa system processes personal data under the following legal bases:
+- **Legal Obligation**: Tax collection and debt enforcement (primary basis)
+- **Public Interest**: Government function of tax administration
+- **Consent**: Only for optional communications (email notifications, SMS)
+
+### Special Considerations
+- **Public Data**: Some debt information may be publicly accessible by law (transparency)
+- **Retention Requirements**: Tax and legal data have mandatory retention periods
+- **Right to Erasure Limitations**: Cannot delete data related to active legal proceedings or tax obligations
+
+### High-Risk Data
+- CPF/CNPJ (taxpayer ID)
+- Financial data (income, assets, debts)
+- Legal proceedings information
+- Payment history
+- Contact information (email, phone, address)
+
+---
+
+## Review Output Template
+
+When reviewing for LGPD compliance, structure findings as:
+
+```
+#### [LGPD Principle] Violation in {ClassName}.{MethodName} - [Severity]
+**Line(s)**: {line numbers}
+**Issue**: {what LGPD requirement is violated}
+**Legal Risk**: {potential LGPD violation and consequences}
+**Impact**: {privacy risk, potential fine, data breach risk}
+**Suggested Fix**: 
+- {step-by-step remediation}
+- {code example if applicable}
+**Legal Basis**: {cite relevant LGPD article if applicable}
+```
+
+---
+
+## LGPD Compliance Priorities
+
+### Critical (Fix Immediately)
+- Data security vulnerabilities
+- Unauthorized data sharing
+- Lack of legal basis for processing
+- Sensitive data in logs or exposed endpoints
+
+### High (Fix Before Production)
+- Missing consent mechanisms
+- No data retention policies
+- Excessive data collection
+- Missing audit trails
+
+### Medium (Plan Remediation)
+- Data minimization improvements
+- Better anonymization in reports
+- Enhanced user data access features
+
+### Low (Continuous Improvement)
+- UI/UX improvements for consent
+- Documentation of data flows
+- Privacy by design enhancements
+
+---
+
+## Additional Resources
+
+- **LGPD Full Text**: [Lei 13.709/2018](http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
+- **ANPD (National Data Protection Authority)**: https://www.gov.br/anpd/
+- **Recommended**: Maintain a Data Processing Registry (Registro de Atividades de Tratamento)

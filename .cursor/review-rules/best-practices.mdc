@@ -1,0 +1,615 @@
+---
+description: General Best Practices and Code Quality Review
+reviewType: best-practices
+---
+
+# Best Practices Review Rules
+
+This file provides general code quality review criteria covering common code smells, refactoring opportunities, and project-specific patterns. References: `@.cursor/rules:A-coding_patterns.mdc`, `@.cursor/rules:naming_conventions.mdc`.
+
+## Review Checklist
+
+### 1. Code Smells and Anti-Patterns
+
+**What to Check:**
+- [ ] No magic numbers (use constants or configuration)
+- [ ] No dead code or commented-out code
+- [ ] No deep nesting (max 3-4 levels)
+- [ ] No long methods (> 50 lines suggests refactoring needed)
+- [ ] No large classes (> 300 lines suggests SRP violation)
+- [ ] No duplicate code (DRY principle)
+- [ ] No God classes (too many responsibilities)
+
+**Common Violations:**
+- Hard-coded values scattered throughout code
+- Large blocks of commented code left in
+- Deeply nested if/else or loops
+- 200+ line methods
+- Copy-pasted code with minor variations
+- Classes with 10+ dependencies
+
+**Severity**: Medium (maintainability)
+
+**Examples:**
+```csharp
+// ❌ BAD: Magic numbers
+public decimal CalcularJuros(decimal valor)
+{
+    return valor * 0.01m; // What is 0.01?
+    if (valor > 1000) // What is 1000?
+        return valor * 0.015m;
+}
+
+// ✅ GOOD: Named constants
+private const decimal TAXA_JUROS_NORMAL = 0.01m;
+private const decimal TAXA_JUROS_ALTO_VALOR = 0.015m;
+private const decimal LIMITE_ALTO_VALOR = 1000m;
+
+public decimal CalcularJuros(decimal valor)
+{
+    if (valor > LIMITE_ALTO_VALOR)
+        return valor * TAXA_JUROS_ALTO_VALOR;
+    
+    return valor * TAXA_JUROS_NORMAL;
+}
+
+// ❌ BAD: Deep nesting
+if (contribuinte != null)
+{
+    if (contribuinte.Ativo)
+    {
+        if (contribuinte.Dividas.Any())
+        {
+            if (contribuinte.Dividas.Sum(d => d.Valor) > 1000)
+            {
+                // Do something
+            }
+        }
+    }
+}
+
+// ✅ GOOD: Early returns, guard clauses
+if (contribuinte == null) return;
+if (!contribuinte.Ativo) return;
+if (!contribuinte.Dividas.Any()) return;
+
+var valorTotal = contribuinte.Dividas.Sum(d => d.Valor);
+if (valorTotal > LIMITE_ALTO_VALOR)
+{
+    // Do something
+}
+
+// ❌ BAD: Long method (100+ lines)
+public void ProcessarParcelamento(int id)
+{
+    // 150 lines of code doing validation, calculation, saving, emailing, logging...
+}
+
+// ✅ GOOD: Extracted methods
+public void ProcessarParcelamento(int id)
+{
+    var parcelamento = ValidarParcelamento(id);
+    var valorCalculado = CalcularValorParcelamento(parcelamento);
+    SalvarParcelamento(parcelamento, valorCalculado);
+    EnviarNotificacao(parcelamento);
+    RegistrarAuditoria(parcelamento);
+}
+```
+
+---
+
+### 2. Naming Conventions
+
+**What to Check:**
+- [ ] Classes use PascalCase: `ContribuinteBusiness`
+- [ ] Methods use PascalCase: `CalcularDesconto()`
+- [ ] Private fields use camelCase with underscore: `_repository`
+- [ ] Properties use PascalCase: `NomeCompleto`
+- [ ] Parameters use camelCase: `parcelamentoId`
+- [ ] Constants use UPPER_CASE: `MAX_PARCELAS`
+- [ ] Boolean names start with Is/Has/Can: `IsAtivo`, `HasDivida`
+- [ ] Async methods end with Async: `SalvarAsync()`
+
+**Common Violations:**
+- Inconsistent casing
+- Abbreviated names: `Calc()`, `Proc()`, `Contrib`
+- Vague names: `DoStuff()`, `ProcessData()`, `item`, `temp`
+- Boolean properties without prefix: `Ativo` instead of `IsAtivo`
+- Hungarian notation: `strNome`, `intId`
+
+**Severity**: Low (consistency, but important for maintainability)
+
+**Examples:**
+```csharp
+// ❌ BAD: Poor naming
+public class contrib
+{
+    public string nm { get; set; }
+    public bool ativo { get; set; } // Boolean without Is/Has
+    private Repository rep; // Not camelCase with underscore
+    
+    public void Proc(int x) // Vague name, vague parameter
+    {
+        var temp = rep.Get(x); // Vague variable name
+        // ...
+    }
+}
+
+// ✅ GOOD: Clear naming
+public class Contribuinte
+{
+    public string NomeCompleto { get; set; }
+    public bool IsAtivo { get; set; }
+    private readonly IContribuinteRepository _repository;
+    
+    public void ProcessarCadastro(int contribuinteId)
+    {
+        var contribuinte = _repository.GetById(contribuinteId);
+        // ...
+    }
+}
+```
+
+---
+
+### 3. Error Handling and Validation
+
+**What to Check:**
+- [ ] Input validation at entry points (controllers, public methods)
+- [ ] Specific exception types (not generic `Exception`)
+- [ ] Exceptions logged with context
+- [ ] User-friendly error messages (not stack traces)
+- [ ] Try-catch blocks not empty or swallowing exceptions
+- [ ] Using statements for IDisposable resources
+- [ ] Null checks before dereferencing
+
+**Common Violations:**
+- No input validation
+- Catching `Exception` instead of specific types
+- Empty catch blocks: `catch { }`
+- Exposing stack traces to users
+- Not disposing database connections
+- NullReferenceException due to missing null checks
+
+**Severity**: Critical (stability and security)
+
+**Examples:**
+```csharp
+// ❌ BAD: No validation, poor error handling
+public void SalvarContribuinte(Contribuinte contribuinte)
+{
+    try
+    {
+        var existing = _repository.GetByCPF(contribuinte.CPF);
+        existing.Nome = contribuinte.Nome;
+        _repository.Update(existing);
+    }
+    catch { } // Swallowing exception!
+}
+
+// ✅ GOOD: Validation and proper error handling
+public void SalvarContribuinte(Contribuinte contribuinte)
+{
+    // Input validation
+    if (contribuinte == null)
+        throw new ArgumentNullException(nameof(contribuinte));
+    
+    if (string.IsNullOrWhiteSpace(contribuinte.CPF))
+        throw new ValidationException("CPF é obrigatório");
+    
+    if (string.IsNullOrWhiteSpace(contribuinte.Nome))
+        throw new ValidationException("Nome é obrigatório");
+    
+    try
+    {
+        var existing = _repository.GetByCPF(contribuinte.CPF);
+        
+        if (existing == null)
+            throw new NotFoundException($"Contribuinte com CPF {contribuinte.CPF} não encontrado");
+        
+        existing.Nome = contribuinte.Nome;
+        existing.DataAtualizacao = DateTime.Now;
+        
+        _repository.Update(existing);
+        
+        _logger.Info($"Contribuinte {contribuinte.Id} atualizado com sucesso");
+    }
+    catch (NotFoundException ex)
+    {
+        _logger.Warn($"Tentativa de atualizar contribuinte inexistente: {contribuinte.CPF}", ex);
+        throw;
+    }
+    catch (DbException ex)
+    {
+        _logger.Error($"Erro ao salvar contribuinte {contribuinte.Id}", ex);
+        throw new BusinessException("Erro ao salvar contribuinte. Tente novamente.", ex);
+    }
+}
+
+// ❌ BAD: Not disposing resources
+public List<CDA> BuscarCDAs()
+{
+    var context = new DividaAtivaContext();
+    return context.CDAs.ToList(); // Context never disposed!
+}
+
+// ✅ GOOD: Using statement
+public List<CDA> BuscarCDAs()
+{
+    using (var context = new DividaAtivaContext())
+    {
+        return context.CDAs.ToList();
+    }
+}
+```
+
+---
+
+### 4. Performance Considerations
+
+**What to Check:**
+- [ ] No N+1 queries (use eager loading with `.Include()`)
+- [ ] Large lists use pagination
+- [ ] Queries use `.AsNoTracking()` for read-only data
+- [ ] Appropriate use of `.Any()` vs `.Count() > 0`
+- [ ] String concatenation in loops uses `StringBuilder`
+- [ ] Database queries not in loops
+- [ ] Proper indexing considered for frequently queried fields
+
+**Common Violations:**
+- Loading entire table: `_context.Contribuintes.ToList()`
+- N+1 queries from lazy loading
+- Tracking entities unnecessarily
+- Using `.Count() > 0` instead of `.Any()`
+- String concatenation in loops: `str += item`
+- Running queries inside loops
+
+**Severity**: Medium to High (depends on data volume)
+
+**Examples:**
+```csharp
+// ❌ BAD: N+1 query problem
+public List<CDAViewModel> ListarCDAs()
+{
+    var cdas = _context.CDAs.ToList(); // First query
+    
+    foreach (var cda in cdas)
+    {
+        cda.Contribuinte = _context.Contribuintes.Find(cda.ContribuinteId); // N queries!
+    }
+    
+    return cdas;
+}
+
+// ✅ GOOD: Eager loading
+public List<CDAViewModel> ListarCDAs()
+{
+    return _context.CDAs
+        .Include(c => c.Contribuinte) // Single query with JOIN
+        .AsNoTracking() // Read-only, no tracking overhead
+        .ToList();
+}
+
+// ❌ BAD: Inefficient existence check
+if (_context.Contribuintes.Count() > 0) // Counts ALL records!
+{
+    // Do something
+}
+
+// ✅ GOOD: Efficient existence check
+if (_context.Contribuintes.Any()) // Stops at first match
+{
+    // Do something
+}
+
+// ❌ BAD: Query in loop
+foreach (var cpf in listaCPFs)
+{
+    var contribuinte = _context.Contribuintes.FirstOrDefault(c => c.CPF == cpf); // N queries!
+}
+
+// ✅ GOOD: Single query
+var contribuintes = _context.Contribuintes
+    .Where(c => listaCPFs.Contains(c.CPF))
+    .ToList();
+
+// ❌ BAD: String concatenation in loop
+string resultado = "";
+foreach (var item in lista)
+{
+    resultado += item.ToString() + ", "; // Creates new string each iteration
+}
+
+// ✅ GOOD: StringBuilder
+var sb = new StringBuilder();
+foreach (var item in lista)
+{
+    sb.Append(item.ToString()).Append(", ");
+}
+string resultado = sb.ToString();
+```
+
+---
+
+### 5. Code Organization and Structure
+
+**What to Check:**
+- [ ] Using statements organized (System first, then third-party, then project)
+- [ ] One class per file
+- [ ] File name matches class name
+- [ ] Classes in appropriate namespaces
+- [ ] Related classes grouped in same folder
+- [ ] No circular dependencies
+- [ ] Logical method ordering (public before private)
+
+**Common Violations:**
+- Random using statement order
+- Multiple classes in one file
+- File named differently from primary class
+- Classes in wrong namespace or folder
+- Circular references between projects
+
+**Severity**: Low to Medium (organization and maintainability)
+
+**Examples:**
+```csharp
+// ❌ BAD: Disorganized usings
+using CREDTRIB.ModelData;
+using System.Linq;
+using CREDTRIB.Business.Logic;
+using System;
+using System.Collections.Generic;
+
+// ✅ GOOD: Organized usings
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using CREDTRIB.Business.Logic;
+using CREDTRIB.ModelData;
+
+// ❌ BAD: Multiple classes in one file
+// File: Services.cs
+public class EmailService { }
+public class SmsService { }
+public class NotificationService { }
+
+// ✅ GOOD: One class per file
+// File: EmailService.cs
+public class EmailService { }
+
+// File: SmsService.cs
+public class SmsService { }
+
+// File: NotificationService.cs
+public class NotificationService { }
+```
+
+---
+
+### 6. Comments and Documentation
+
+**What to Check:**
+- [ ] Public APIs have XML documentation
+- [ ] Complex algorithms have explanatory comments
+- [ ] TODOs include date and author: `// TODO (2024-01-15, João): ...`
+- [ ] No obvious comments (self-documenting code preferred)
+- [ ] Comments explain WHY, not WHAT
+- [ ] Commented-out code removed (use source control)
+
+**Common Violations:**
+- Public methods without XML docs
+- Obvious comments: `// Increment i` for `i++`
+- Large blocks of commented code
+- TODOs without context or date
+- Comments contradicting code
+
+**Severity**: Low (documentation quality)
+
+**Examples:**
+```csharp
+// ❌ BAD: Obvious comment
+// Increment counter
+counter++;
+
+// Set name to João
+nome = "João";
+
+// ✅ GOOD: Explain WHY, not WHAT
+// Resetting counter because new fiscal year starts
+counter = 0;
+
+// Using default name for anonymous taxpayer per regulation X
+nome = "João";
+
+// ❌ BAD: Uncommented public API
+public decimal CalcularDesconto(Parcelamento parcelamento, TabelaDesconto tabela)
+{
+    // Implementation
+}
+
+// ✅ GOOD: XML documentation
+/// <summary>
+/// Calcula o desconto aplicável ao parcelamento baseado na tabela de descontos.
+/// </summary>
+/// <param name="parcelamento">O parcelamento a ser calculado</param>
+/// <param name="tabela">A tabela de descontos vigente</param>
+/// <returns>O valor do desconto em reais</returns>
+/// <exception cref="ArgumentNullException">Se parcelamento ou tabela forem null</exception>
+public decimal CalcularDesconto(Parcelamento parcelamento, TabelaDesconto tabela)
+{
+    // Implementation
+}
+
+// ❌ BAD: Vague TODO
+// TODO: Fix this
+
+// ✅ GOOD: Specific TODO
+// TODO (2024-01-15, Maria): Implementar cálculo de multa progressiva conforme Lei X/2024
+```
+
+---
+
+### 7. LINQ and Query Optimization
+
+**What to Check:**
+- [ ] LINQ queries are readable (not overly complex one-liners)
+- [ ] Deferred execution understood (`.ToList()` when needed)
+- [ ] Appropriate use of `.Where()`, `.Select()`, `.FirstOrDefault()`
+- [ ] No multiple enumerations of same query
+- [ ] `.Single()` vs `.First()` used appropriately
+
+**Common Violations:**
+- Overly complex LINQ chains
+- Multiple `.ToList()` calls on same data
+- Using `.Where().FirstOrDefault()` instead of `.FirstOrDefault(predicate)`
+- Enumerating query multiple times
+
+**Severity**: Medium (readability and performance)
+
+**Examples:**
+```csharp
+// ❌ BAD: Overly complex one-liner
+var result = _context.CDAs.Where(c => c.Ativo).Select(c => c.Contribuinte)
+    .Where(ct => ct.Ativo).SelectMany(ct => ct.Enderecos)
+    .Where(e => e.Tipo == "Principal").Select(e => e.CEP).Distinct().ToList();
+
+// ✅ GOOD: Readable, broken into steps
+var cdasAtivas = _context.CDAs.Where(c => c.IsAtivo);
+var contribuintesAtivos = cdasAtivas.Select(c => c.Contribuinte).Where(ct => ct.IsAtivo);
+var enderecosPrincipais = contribuintesAtivos.SelectMany(ct => ct.Enderecos)
+    .Where(e => e.Tipo == TipoEndereco.Principal);
+var ceps = enderecosPrincipais.Select(e => e.CEP).Distinct().ToList();
+
+// ❌ BAD: Inefficient filtering
+var contribuintes = _context.Contribuintes.Where(c => c.Ativo).ToList();
+var primeiro = contribuintes.FirstOrDefault();
+
+// ✅ GOOD: Efficient
+var primeiro = _context.Contribuintes
+    .Where(c => c.IsAtivo)
+    .FirstOrDefault();
+
+// ❌ BAD: Multiple enumeration
+var query = _context.CDAs.Where(c => c.IsAtivo);
+var count = query.Count(); // Executes query
+var items = query.ToList(); // Executes query again!
+
+// ✅ GOOD: Single enumeration
+var items = _context.CDAs.Where(c => c.IsAtivo).ToList();
+var count = items.Count; // In-memory count
+```
+
+---
+
+### 8. DateTime Handling
+
+**What to Check:**
+- [ ] Use `DateTime.Now` for local time, `DateTime.UtcNow` for UTC
+- [ ] Timezone considerations documented
+- [ ] Date comparisons use `.Date` property when needed
+- [ ] Date formatting uses consistent pattern
+- [ ] Business dates (excluding weekends/holidays) handled correctly
+
+**Common Violations:**
+- Mixing `DateTime.Now` and `DateTime.UtcNow`
+- Comparing dates with time components unintentionally
+- Hardcoded date formats
+- Not considering timezone in distributed systems
+
+**Severity**: Medium (can cause subtle bugs)
+
+**Examples:**
+```csharp
+// ❌ BAD: Comparing dates with time
+if (parcelamento.DataVencimento == DateTime.Now) // Almost never equal!
+{
+    // ...
+}
+
+// ✅ GOOD: Comparing just the date part
+if (parcelamento.DataVencimento.Date == DateTime.Now.Date)
+{
+    // ...
+}
+
+// ❌ BAD: Hardcoded format
+string data = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+
+// ✅ GOOD: Use constants or configuration
+private const string FORMATO_DATA_PADRAO = "dd/MM/yyyy";
+string data = DateTime.Now.ToString(FORMATO_DATA_PADRAO);
+```
+
+---
+
+## Project-Specific Patterns
+
+### Entity Framework Patterns
+- Always use repository pattern for data access
+- Business layer should NOT reference `DbContext` directly
+- Use migrations for schema changes
+- Entity configurations should use Fluent API (see `@.cursor/rules:fluent_api.mdc`)
+
+### MVC Patterns
+- Controllers should be thin (delegate to Business layer)
+- Use ViewModels for view-specific data
+- TempData for post-redirect messages
+- Validate on both client and server
+
+### Business Logic Patterns
+- One business class per aggregate or operation
+- Business methods should be focused (one thing)
+- Validation in business layer
+- Return ViewModels, not entities
+
+---
+
+## Review Output Template
+
+When reviewing for best practices, structure findings as:
+
+```
+#### [Category] Issue in {ClassName}.{MethodName} - [Severity]
+**Line(s)**: {line numbers}
+**Issue**: {what code smell or anti-pattern}
+**Impact**: {maintainability, performance, or readability concern}
+**Suggested Refactoring**: 
+- {specific improvement}
+- {code example showing better approach}
+**Pattern Reference**: {link to relevant rule file if applicable}
+```
+
+---
+
+## Priority Levels
+
+### Critical (Fix Before Merge)
+- Security vulnerabilities
+- Resource leaks (undisposed connections)
+- Data integrity issues
+- Unhandled exceptions
+
+### High (Fix Soon)
+- Performance problems (N+1 queries)
+- Poor error handling
+- Significant code smells
+
+### Medium (Plan Refactoring)
+- Code duplication
+- Long methods/classes
+- Poor naming
+- Missing documentation
+
+### Low (Continuous Improvement)
+- Minor formatting
+- Comment quality
+- Using statement order
+
+---
+
+## Additional Resources
+
+- **C# Coding Conventions**: https://docs.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions
+- **Clean Code by Robert C. Martin**
+- **Refactoring by Martin Fowler**
+- **Project Patterns**: See all `@.cursor/rules/C-*.mdc` files

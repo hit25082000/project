@@ -1,0 +1,197 @@
+---
+description: SOLID Principles Review Checklist
+reviewType: solid
+---
+
+# SOLID Principles Review Rules
+
+This file provides specific criteria for reviewing code against SOLID principles. Reference: `@.cursor/rules:A-coding_patterns.mdc` (SOLID Principles section).
+
+## Review Checklist
+
+### Single Responsibility Principle (SRP)
+
+**What to Check:**
+- [ ] Each class has only one reason to change
+- [ ] Controllers only handle HTTP concerns (routing, model binding, response)
+- [ ] Business classes focus on a single domain operation
+- [ ] Repositories handle data access for a single entity
+
+**Common Violations:**
+- Controller doing business logic or calculations
+- Controller directly accessing database (DbContext)
+- Business class mixing multiple concerns (e.g., calculation + email + logging)
+- Repository including business logic or validation
+- God classes with many responsibilities
+
+**Severity**: Critical if controller violates, High if business layer violates
+
+---
+
+### Open/Closed Principle (OCP)
+
+**What to Check:**
+- [ ] New features added via new classes, not modifying existing ones
+- [ ] Behavior extended through interfaces and inheritance
+- [ ] Strategy pattern used for varying algorithms
+- [ ] Conditional logic (if/switch) replaced with polymorphism when appropriate
+
+**Common Violations:**
+- Adding new discount types by adding if/else to existing method
+- Modifying stable classes instead of extending them
+- Hard-coded behavior that should be configurable
+- Long switch statements on type fields
+
+**Severity**: Medium (affects maintainability, not immediate functionality)
+
+---
+
+### Liskov Substitution Principle (LSP)
+
+**What to Check:**
+- [ ] Derived classes can substitute base classes without breaking behavior
+- [ ] Overridden methods respect base class contracts
+- [ ] No unexpected exceptions in derived implementations
+- [ ] Preconditions not strengthened, postconditions not weakened
+
+**Common Violations:**
+- Derived class throws exception where base returns null
+- Override changes expected behavior (e.g., returns different data type semantics)
+- Derived class requires additional setup not in base
+- Breaking Liskov in repository inheritance
+
+**Severity**: High (can cause runtime errors)
+
+---
+
+### Interface Segregation Principle (ISP)
+
+**What to Check:**
+- [ ] Interfaces are focused and role-specific
+- [ ] No "fat" interfaces with many unrelated methods
+- [ ] Clients don't depend on methods they don't use
+- [ ] Interfaces designed around client needs
+
+**Common Violations:**
+- Single `IService` interface with 10+ methods
+- Interface forcing implementations to throw NotImplementedException
+- Generic interfaces that combine unrelated operations
+- Repository interfaces with methods only used by one client
+
+**Severity**: Low (affects design quality, not functionality)
+
+---
+
+### Dependency Inversion Principle (DIP)
+
+**What to Check:**
+- [ ] Business layer depends on repository interfaces (e.g., `IDescontoRepository`)
+- [ ] No direct instantiation of concrete dependencies (`new ServiceClass()`)
+- [ ] Controllers inject business dependencies
+- [ ] External services used through interfaces
+
+**Common Violations:**
+- Business class instantiating concrete repository: `new DescontoRepository()`
+- Controller directly creating DbContext: `new DividaAtivaContext()`
+- Hard-coded external service references (SMTP, file system, web services)
+- Static dependencies instead of injected dependencies
+
+**Severity**: Critical (prevents testing, tight coupling)
+
+---
+
+## Practical Examples
+
+### ❌ BAD: Violates Multiple SOLID Principles
+
+```csharp
+// Controller with SRP + DIP violations
+public class ParcelamentoController : Controller
+{
+    public ActionResult ApplyDiscount(int id)
+    {
+        // DIP violation - concrete dependency
+        var db = new DividaAtivaContext();
+        
+        // SRP violation - business logic in controller
+        var parcelamento = db.Parcelamentos.Find(id);
+        decimal desconto = parcelamento.Valor * 0.1m;
+        
+        // SRP violation - data access in controller
+        parcelamento.ValorDesconto = desconto;
+        db.SaveChanges();
+        
+        return Json(new { desconto });
+    }
+}
+```
+
+### ✅ GOOD: Follows SOLID Principles
+
+```csharp
+// Interface (ISP + DIP)
+public interface IDescontoCalculator
+{
+    decimal Calculate(int parcelamentoId);
+}
+
+// Business class (SRP + DIP)
+public class DescontoCalculator : IDescontoCalculator
+{
+    private readonly IParcelamentoRepository _repository;
+    
+    public DescontoCalculator(IParcelamentoRepository repository)
+    {
+        _repository = repository;
+    }
+    
+    public decimal Calculate(int parcelamentoId)
+    {
+        var parcelamento = _repository.GetById(parcelamentoId);
+        return parcelamento.Valor * 0.1m;
+    }
+}
+
+// Controller (SRP + DIP)
+public class ParcelamentoController : Controller
+{
+    private readonly IDescontoCalculator _calculator;
+    
+    public ParcelamentoController(IDescontoCalculator calculator)
+    {
+        _calculator = calculator;
+    }
+    
+    public ActionResult ApplyDiscount(int id)
+    {
+        var desconto = _calculator.Calculate(id);
+        return Json(new { desconto });
+    }
+}
+```
+
+---
+
+## Review Output Template
+
+When reviewing, structure findings as:
+
+```
+#### [Principle] Violation in {ClassName}.{MethodName} - [Severity]
+**Line(s)**: {line numbers}
+**Issue**: {what principle is violated and how}
+**Impact**: {why this matters - testing, maintainability, coupling}
+**Suggested Fix**: 
+- {step-by-step refactoring}
+- {code example if complex}
+```
+
+---
+
+## Architecture Context
+
+**Current Stack**: .NET Framework 4.5.2, Entity Framework 6, ASP.NET MVC 5
+**Existing Patterns**: Repository pattern, Business layer, MVC Controllers
+**Constraints**: Legacy codebase, gradual refactoring preferred over rewrites
+
+When suggesting refactorings, respect the existing architecture and suggest incremental improvements.

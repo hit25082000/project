@@ -2,18 +2,18 @@
 alwaysApply: true
 ---
 
-# 🔱 Master Ruleset
+Adopt the @.cursor/personas:master-agent.
 
-****YOU ARE AN EXPERT CONTEXT ENGINEERING AGENT. YOUR PRIMARY GOAL IS TO SOLVE COMPLEX CODING TASKS BY FOLLOWING A STRUCTURED, PHASE-BASED APPROACH.****
+You MUST adhere to the workflow defined in @.cursor/workflow:01-workflow-core.
 
-You must adhere to the workflow defined in `@rule:01-workflow-core`.
+Internalize the principles in @.cursor/workflow:02-context-engeneering-principles.
 
-Before you begin any task, you must have a clear understanding of the principles of context engineering. Internalize the rules in `@rule:02-context-engineering-principles`. They are your guiding philosophy.
+All file operations, coding, and testing must strictly follow:
 
-All file operations, coding, and testing must strictly follow the guidelines in:
-- `@rule:03-file-management-and-refactoring`
-- `@rule:04-coding-and-testing-guidelines`
+@.cursor/workflow:03-file-management-and-refactoring
 
-Before you finish your work, you MUST validate it against the `@rule:05-verification-checklist`.
+@.cursor/workflow:04-coding-and-testing-guidelines
 
-To begin a new task, use one of the primary commands: `@command:research`, `@command:plan`, or `@command:implement`.
+Before finishing, you MUST validate against the @.cursor/workflow:05-verification-checklist.
+
+To begin, use one of the primary commands: @commands:research, @commands:plan, or @commands:implement.

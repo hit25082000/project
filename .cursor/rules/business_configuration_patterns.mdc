@@ -1,0 +1,67 @@
+---
+description: Business configuration patterns for centralized project data access
+alwaysApply: false
+---
+
+# Business Configuration Patterns
+
+**Prerequisites**: @A-coding_patterns
+
+## Business Configuration Service
+
+Use the `BusinessConfigService` to access centralized business information throughout the application.
+
+### Import Pattern
+```typescript
+import { BusinessConfigService } from '@shared/services/business-config.service';
+```
+
+### Usage Examples
+```typescript
+// In components
+export class ContactComponent {
+  private businessConfig = inject(BusinessConfigService);
+  
+  get contactInfo() {
+    return {
+      name: this.businessConfig.projectName,
+      email: this.businessConfig.email,
+      phone: this.businessConfig.phone,
+      address: this.businessConfig.address
+    };
+  }
+}
+
+// In services
+@Injectable({ providedIn: 'root' })
+export class EmailService {
+  private businessConfig = inject(BusinessConfigService);
+  
+  getFromAddress(): string {
+    return this.businessConfig.email;
+  }
+}
+```
+
+## Available Business Variables
+
+| Variable | Description | Access Method |
+|----------|-------------|---------------|
+| `project_name` | Project/company name | `businessConfig.projectName` |
+| `email` | Contact email address | `businessConfig.email` |
+| `phone` | Contact phone number | `businessConfig.phone` |
+| `address` | Physical address | `businessConfig.address` |
+
+## Rules
+
+- **Always use BusinessConfigService**: Never access environment variables directly for business data
+- **Consistent naming**: Use the service getter methods, not direct environment access
+- **Service injection**: Use `inject(BusinessConfigService)` in components and services
+- **Import alias**: Use `@shared/services/business-config.service` import path
+
+## Checklist
+
+- [ ] Import BusinessConfigService from @shared/services
+- [ ] Use inject() to get service instance
+- [ ] Access business data through service getters only
+- [ ] Never access environment business variables directly
