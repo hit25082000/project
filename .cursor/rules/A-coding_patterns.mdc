@@ -1,6 +1,5 @@
 ---
 description: Global architectural, quality, and security standards for the entire codebase
-globs:
 alwaysApply: false
 ---
 
@@ -25,6 +24,8 @@ Components → Services → APIs → Supabase
 - Avoid manual subscription management
 - Leverage `computed()` for derived state
 - Use `resource()` for async data loading
+- **FORBIDDEN**: `effect()` in components for form state management
+- **REQUIRED**: Use `computed()` for reactive form updates
 
 ### Referencing This Guide
 - Component, service, and API pattern files should link back here for shared rules on signals, layering, and security
@@ -36,7 +37,8 @@ Components → Services → APIs → Supabase
 - Use strict type checking
 - Prefer interfaces over types for object shapes
 - Use utility types (`Pick`, `Omit`, `Partial`) for type variations
-- Avoid `any` type usage
+- **FORBIDDEN**: `any` type usage including `$any()` in templates
+- **REQUIRED**: Proper type assertions with `as` keyword
 
 ### Performance Considerations
 - Use `OnPush` change detection strategy
@@ -49,3 +51,19 @@ Components → Services → APIs → Supabase
 - Sanitize data before rendering
 - Use proper authentication guards
 - Implement proper authorization checks
+
+## Rule Enforcement
+
+### Pre-Implementation Checklist
+- [ ] Read this guide as prerequisite for all component patterns
+- [ ] Verify signal-based architecture compliance
+- [ ] Confirm TypeScript strict typing
+- [ ] Check separation of concerns
+- [ ] Validate performance considerations
+
+### Post-Implementation Validation
+- [ ] No `effect()` in components for form state
+- [ ] No `$any()` type assertions in templates
+- [ ] Proper type assertions with `as` keyword
+- [ ] OnPush change detection used
+- [ ] Signal-based state management implemented

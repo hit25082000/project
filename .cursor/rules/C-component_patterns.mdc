@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Component Patterns
 
-**Prerequisites**: @A-coding_patterns
+**Prerequisites**: read `@.cursor/rules/A-coding_patterns`
 
 ## Complete Pattern (Page Component)
 
@@ -69,23 +69,37 @@ export class UserListPage {
 
 ## Forms {#forms}
 
+**CRITICAL**: All forms MUST use the dynamic form pattern. Manual FormBuilder usage is prohibited.
+
 ```typescript
-// Form config in constant file
-export const USER_FORM_CONFIG = (): iDynamicFormConfig[] => [
+// REQUIRED: Form config in constant file
+export const USER_EDIT_FORM_CONFIG = (): iDynamicFormConfig[] => [
   {
-    label: 'Email',
-    name: 'email',
+    label: 'Name',
+    name: 'name',
     type: { field: eDynamicField.INPUT },
-    validations: [Validators.required, Validators.email]
+    validations: [Validators.required, Validators.minLength(2)]
+  },
+  {
+    label: 'Avatar URL',
+    name: 'avatar_url',
+    type: { field: eDynamicField.INPUT },
+    validations: []
   }
 ];
 
-// Usage in component
+// REQUIRED: Usage in component
 <v-dynamic-form 
   [config]="formConfig" 
   (formSubmit)="onSubmit($event)"
 />
 ```
+
+**Form Checklist**:
+- [ ] Uses dynamic form config pattern
+- [ ] No manual FormBuilder usage
+- [ ] No custom form templates
+- [ ] All validations defined in config
 
 ## Routing {#routing}
 
@@ -121,3 +135,19 @@ scrollToSection(id: string): void {
 - [ ] Templates use new control flow
 - [ ] Forms use dynamic config pattern
 - [ ] Errors handled via @error_handling_patterns#component-errors
+
+## Rule Enforcement
+
+### Pre-Implementation Checklist
+- [ ] Read @A-coding_patterns as prerequisite
+- [ ] Verify signal-based architecture compliance
+- [ ] Confirm dynamic form pattern usage
+- [ ] Validate TypeScript strict typing
+- [ ] Check OnPush change detection
+
+### Post-Implementation Validation
+- [ ] No manual FormBuilder usage
+- [ ] No `effect()` in components
+- [ ] No `$any()` type assertions
+- [ ] All forms use dynamic config
+- [ ] Proper separation of concerns maintained

@@ -38,7 +38,9 @@ export class UserService {
 
   // Public signals - simplified and consolidated
   readonly users = computed(() => this.listResource.value() || []);
-  readonly selectedUser = computed(() => this.detailsResource.value());
+  readonly selectedUser = computed<User | null>(
+    () => this.detailsResource.value() as User | null
+  );
   readonly isLoading = computed(
     () => this.listResource.isLoading() || this.detailsResource.isLoading()
   );

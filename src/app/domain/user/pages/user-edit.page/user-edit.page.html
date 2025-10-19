@@ -1,0 +1,45 @@
+<div class="user-edit-page">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-content">
+      <button
+        class="btn btn-outline back-btn"
+        (click)="onCancel()"
+        title="Back to users"
+      >
+        ← Back
+      </button>
+      <h1>Edit User</h1>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="page-content">
+    @if (isLoading()) {
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Loading user...</p>
+    </div>
+    } @else if (error()) {
+    <div class="error-container">
+      <h3>Error loading user</h3>
+      <p>{{ error()?.message || 'An unexpected error occurred' }}</p>
+      <div class="error-actions">
+        <button class="btn btn-primary" (click)="onCancel()">Back to Users</button>
+      </div>
+    </div>
+    } @else if (selectedUser()) {
+    <v-user-edit
+      [user]="selectedUser()!"
+      (save)="onSave($event)"
+      (cancel)="onCancel()"
+    />
+    } @else {
+    <div class="not-found-container">
+      <h3>User not found</h3>
+      <p>The user you're trying to edit doesn't exist or has been deleted.</p>
+      <button class="btn btn-primary" (click)="onCancel()">Back to Users</button>
+    </div>
+    }
+  </main>
+</div>
