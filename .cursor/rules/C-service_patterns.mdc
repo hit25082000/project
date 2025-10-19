@@ -7,6 +7,8 @@ alwaysApply: false
 
 Services manage state with Signals and business logic. **Prerequisites**: Read @A-coding_patterns first.
 
+**Important** Create a documentation file next to service after implement
+
 ## Core Pattern
 
 ```typescript
