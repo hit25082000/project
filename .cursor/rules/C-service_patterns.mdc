@@ -5,9 +5,19 @@ alwaysApply: false
 
 # Service Patterns
 
-Services manage state with Signals and business logic. **Prerequisites**: Read @A-coding_patterns first.
+Services manage state with Signals and business logic. **Prerequisites**: Read @A-coding_patterns first (includes directory structure principles).
 
-**Important** Create a documentation file next to service after implement
+**Important** Create comprehensive documentation after implementing services:
+
+### Documentation Requirements
+- **JSDoc Comments**: Add detailed JSDoc to all public methods with parameters, returns, throws, and examples
+- **Service Documentation**: Create `docs/services/{service-name}.md` with:
+  - Overview and architecture description
+  - State management diagram and signal documentation
+  - API methods with signatures and examples
+  - Usage patterns and best practices
+  - Performance considerations
+  - Testing patterns and troubleshooting guide
 
 ## Core Pattern
 
@@ -64,3 +74,4 @@ export class ExampleService {
 - [ ] Follows error patterns from central doc
 - [ ] Consolidates loading states
 - [ ] Implements validation before API calls
+- [ ] Services placed in correct directory structure (see @A-coding_patterns#directory-structure)

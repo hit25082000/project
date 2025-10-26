@@ -27,8 +27,55 @@ Components → Services → APIs → Supabase
 - **FORBIDDEN**: `effect()` in components for form state management
 - **REQUIRED**: Use `computed()` for reactive form updates
 
+### Directory Structure Principles
+
+The project uses a modular structure to keep concerns separated and scalable.
+
+#### Directory Architecture and Organization
+
+* **`/core` – Core System**: Application-wide logic that loads once.
+  ```
+  core/
+  ├── guards/      # Authentication and authorization guards
+  ├── pages/       # System-level pages (e.g., 404 Not Found)
+  └── layout/      # Main application layouts (shells with navbars)
+  ```
+
+* **`/shared` – Shared Resources**: Reusable code that is business-agnostic.
+  ```
+  shared/
+  ├── components/  # Shared, business-aware components
+  ├── constants/   # Global constants
+  └── services/    # Global services (e.g., notification service)
+  ```
+
+* **`/widget` – UI Widgets**: Generic, presentation-only components.
+  ```
+  widget/
+  ├── components/  # Reusable UI components (e.g., v-button, v-card)
+  ├── directives/  # Custom attribute or structural directives
+  └── pipes/       # Custom data transformation pipes
+  ```
+
+* **`/domain` – Business Modules**: One folder per business domain.
+  ```
+  domain/
+  ├── auth/
+  └── establishment/
+      ├── apis/
+      ├── components/
+      ├── services/
+      ├── interfaces/
+      ├── pages/
+      └── ...
+  ```
+
+#### File Placement Rules
+
+> Domain-specific files (`constants`, `dialogs`, etc.) **must** be placed inside their respective domain folder. If a resource needs to be used by more than one domain, it should be moved to the `/shared` folder. If it is a purely presentational UI component, it belongs in `/widget`.
+
 ### Referencing This Guide
-- Component, service, and API pattern files should link back here for shared rules on signals, layering, and security
+- Component, service, and API pattern files should link back here for shared rules on signals, layering, security, and directory structure
 - Update this document first whenever a global rule changes, then adjust downstream references
 
 ## Code Quality Standards
@@ -60,6 +107,7 @@ Components → Services → APIs → Supabase
 - [ ] Confirm TypeScript strict typing
 - [ ] Check separation of concerns
 - [ ] Validate performance considerations
+- [ ] Verify proper directory structure placement
 
 ### Post-Implementation Validation
 - [ ] No `effect()` in components for form state
@@ -67,3 +115,4 @@ Components → Services → APIs → Supabase
 - [ ] Proper type assertions with `as` keyword
 - [ ] OnPush change detection used
 - [ ] Signal-based state management implemented
+- [ ] Files placed in correct directory structure

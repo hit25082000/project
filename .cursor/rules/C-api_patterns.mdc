@@ -3,7 +3,7 @@ description: API layer contract for Supabase access and error propagation
 alwaysApply: false
 ---
 
-The API layer is responsible for all communication with Supabase. Review `A-coding_patterns.mdc` for security and quality principles that also apply here.
+The API layer is responsible for all communication with Supabase. Review `A-coding_patterns.mdc` for security, quality principles, and directory structure guidelines that also apply here.
 
 ## API Layer Rules
 
@@ -93,7 +93,14 @@ export class EstablishmentApi {
   }
 }
 ```
+## API Checklist
+- [ ] Only layer that communicates with backend
+- [ ] Injects SupabaseClient directly
+- [ ] Uses TypeScript interfaces for request/response types
+- [ ] Implements proper error handling and logging
+- [ ] APIs placed in correct directory structure (see @A-coding_patterns#directory-structure)
+
 ### Related References
-- `A-coding_patterns.mdc` – Architecture and security guidelines
+- `A-coding_patterns.mdc` – Architecture, security, and directory structure guidelines
 - `error_handling_patterns.mdc#API Layer Error Handling` – Error handling specifics
 - `apis/api_testing_reference.md` – Testing examples, helpers, and advanced patterns

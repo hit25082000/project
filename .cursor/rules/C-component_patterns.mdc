@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Component Patterns
 
-**Prerequisites**: read `@.cursor/rules/A-coding_patterns`
+**Prerequisites**: read `@.cursor/rules/A-coding_patterns` (includes directory structure principles)
 
 ## Complete Pattern (Page Component)
 
@@ -135,15 +135,17 @@ scrollToSection(id: string): void {
 - [ ] Templates use new control flow
 - [ ] Forms use dynamic config pattern
 - [ ] Errors handled via @error_handling_patterns#component-errors
+- [ ] Components placed in correct directory structure (see @A-coding_patterns#directory-structure)
 
 ## Rule Enforcement
 
 ### Pre-Implementation Checklist
-- [ ] Read @A-coding_patterns as prerequisite
+- [ ] Read @A-coding_patterns as prerequisite (includes directory structure)
 - [ ] Verify signal-based architecture compliance
 - [ ] Confirm dynamic form pattern usage
 - [ ] Validate TypeScript strict typing
 - [ ] Check OnPush change detection
+- [ ] Verify proper directory structure placement
 
 ### Post-Implementation Validation
 - [ ] No manual FormBuilder usage
@@ -151,3 +153,4 @@ scrollToSection(id: string): void {
 - [ ] No `$any()` type assertions
 - [ ] All forms use dynamic config
 - [ ] Proper separation of concerns maintained
+- [ ] Files placed in correct directory structure
