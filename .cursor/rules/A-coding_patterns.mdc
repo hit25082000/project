@@ -74,8 +74,29 @@ The project uses a modular structure to keep concerns separated and scalable.
 
 > Domain-specific files (`constants`, `dialogs`, etc.) **must** be placed inside their respective domain folder. If a resource needs to be used by more than one domain, it should be moved to the `/shared` folder. If it is a purely presentational UI component, it belongs in `/widget`.
 
+### Naming Conventions
+
+**File Naming**: `kebab-case` with format `feature.type.ts`
+- Components: `[feature]-[type].component.ts` (e.g., `user-profile.page.ts`)
+- Services: `[feature].service.ts` (e.g., `user.service.ts`)
+- APIs: `[feature].api.ts` (e.g., `user.api.ts`)
+
+**Class Naming**: PascalCase
+- Services: `[Feature]Service` (e.g., `UserService`)
+- Components: `[Feature][Type]Component` (e.g., `UserProfilePage`)
+- Interfaces: `i[Feature]` (e.g., `iUser`)
+
+**Selectors**: 
+- Pages: `app-[feature]-[action]` (e.g., `<app-user-profile>`)
+- Reusable: `v-[feature]-[type]` (e.g., `<v-user-card>`)
+
+**Variables**: camelCase (e.g., `selectedUser`, `isLoading`)
+**Constants**: SCREAMING_SNAKE_CASE (e.g., `USER_FORM_CONFIG`)
+**Database**: snake_case (e.g., `user_profile`)
+**CSS**: BEM methodology (e.g., `.user-card__title`)
+
 ### Referencing This Guide
-- Component, service, and API pattern files should link back here for shared rules on signals, layering, security, and directory structure
+- Component, service, and API pattern files should link back here for shared rules on signals, layering, security, directory structure, and naming conventions
 - Update this document first whenever a global rule changes, then adjust downstream references
 
 ## Code Quality Standards
@@ -108,6 +129,7 @@ The project uses a modular structure to keep concerns separated and scalable.
 - [ ] Check separation of concerns
 - [ ] Validate performance considerations
 - [ ] Verify proper directory structure placement
+- [ ] Confirm naming conventions compliance
 
 ### Post-Implementation Validation
 - [ ] No `effect()` in components for form state
@@ -116,3 +138,4 @@ The project uses a modular structure to keep concerns separated and scalable.
 - [ ] OnPush change detection used
 - [ ] Signal-based state management implemented
 - [ ] Files placed in correct directory structure
+- [ ] All naming conventions followed consistently
